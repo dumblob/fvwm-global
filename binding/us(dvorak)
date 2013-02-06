@@ -1,0 +1,154 @@
+
+#	FIXME napsat bindings na void fce (otestovat mod1-5) !!!
+
+#--------
+# Keyboard
+#----------------
+
+#  TEST binding
+Key F1 A C NoOptionFunc
+
+#Key L_Ctrl A C Echo ==> zmacknuta klavesa:
+#Key F1 A C Echo ==> zmacknuta klavesa:
+#Key F1 A C Echo ==> zmacknuta klavesa:
+#Key F1 A C Echo ==> zmacknuta klavesa:
+#Key F1 A C Echo ==> zmacknuta klavesa:
+#Key F1 A C Echo ==> zmacknuta klavesa:
+
+#  Open root menu
+#Key Menu A A Menu FvwmRootMenu Root o50 o20
+Key A A M Menu FvwmRootMenu Root o50+3p o20
+
+#  Open terminal emulator
+Key S A M Exec exec $[fvwm_term]
+
+#  system backlight control (input-event-daemon)
+#Key L          A M Echo FIXME Backlight up
+#Key apostrophe A M Echo FIXME Backlight down
+
+#  system volume control (input-event-daemon)
+#Key R A M Volume up
+#Key G A M Volume down
+#Key Z A M MuteAll
+
+#  audio player control
+#Key P         A M AudioPlayer Next
+#Key comma     A M AudioPlayer Previous
+#Key semicolon A M AudioPlayer PlayPause
+
+#  Open the WindowList which lists the running applications and then switches
+#  to the application you selected when the "release" key is released
+Key Tab A M WindowList (AnyScreen) Root o50 o30 \
+   Function EWMHActivateWindowFunc, OnTop, IconifiedAtEnd, \
+   NoNumInDeskTitle, NoCurrentDeskTitle, NoLayer, NoDeskNum, \
+   MaxLabelWidth 50, Icons, ShowPageX, IconifiedAtEnd, \
+   NoHotkeys, SelectOnRelease Alt_L
+
+#  Open the window ops menu
+Key J A M ThisWindow (!CirculateHit) Menu WindowOpsMenu Window o50 o20
+#Menu WindowOpsMenu Window|Interior|Context
+
+#  Open the keyboard layouts menu FIXME
+Key K A M Echo FIXME FvwmKbdMenu
+
+#  Delete the active window when Alt + Q is pressed
+#Key Q A M Silent Delete
+#Key apostrophe A M Silent Delete
+Key W A M Silent Delete
+
+#	Maximize the window (Maximize <horiz> <vert>)
+#Key Return A M Maximize 100 100
+Key M A M Maximize 100 100
+
+#  Switch to next window on this page (on querty/z: asdw + 1right = sdfe)
+Key U      A M Direction East  (CurrentGlobalPage, AnyScreen) \
+   EWMHActivateWindowFunc
+Key O      A M Direction West  (CurrentGlobalPage, AnyScreen) \
+   EWMHActivateWindowFunc
+Key period A M Direction North (CurrentGlobalPage, AnyScreen) \
+   EWMHActivateWindowFunc
+Key E      A M Direction South (CurrentGlobalPage, AnyScreen) \
+   EWMHActivateWindowFunc
+
+#  switch to the next desktop, wrap switch at the end
+# Scroll horizontal[p] vertical[p] | reverse
+Key Left  A M GotoPage wrapx -1p 0p
+Key Right A M GotoPage wrapx +1p 0p
+Key H     A M GotoPage wrapx -1p 0p
+Key N     A M GotoPage wrapx +1p 0p
+
+#  Add page right of current, go there and open main menu
+Key Up A M AddPage
+##Key I  A M AddPage
+Key C  A M AddPage
+
+#  Remove current page and terminate all windows there
+Key Down A M RemovePage
+##Key K    A M RemovePage
+Key T    A M RemovePage
+
+#  oba alt + leva ruka = zvetsovat/zmensovat/grow/shrink
+#Key Down A M RemovePage
+#Key K    A M RemovePage
+#Key Down A M RemovePage
+#Key K    A M RemovePage
+
+#  oba alt + prava ruka = prohazovat okna
+#Key Down A M RemovePage
+#Key K    A M RemovePage
+#Key Down A M RemovePage
+#Key K    A M RemovePage
+
+#  Move window to the page left/right
+Key G A M Silent MoveCurrentWinAndViewportLeftRight -1p
+##Key U A M Silent MoveCurrentWinAndViewportLeftRight -1p
+Key R A M Silent MoveCurrentWinAndViewportLeftRight +1p
+##Key O A M Silent MoveCurrentWinAndViewportLeftRight +1p
+
+
+
+#--------
+# Menu
+#----------------
+
+#  Exit from menu or tear off menu
+##Key Q M A MenuClose
+Key Q M A MenuClose
+# MenuCloseAndExec
+
+#  Navigate through menu with LEFT HAND
+Key U      M A MenuEnterSubmenu
+##Key F M A MenuEnterSubmenu
+Key O      M A MenuLeaveSubmenu
+##Key S M A MenuLeaveSubmenu
+Key period M A MenuMoveCursor -1
+##Key E M A MenuMoveCursor -1
+Key E      M A MenuMoveCursor +1
+##Key D M A MenuMoveCursor +1
+
+#  Navigate through menu with RIGHT HAND
+Key N M A MenuEnterSubmenu
+##Key L M A MenuEnterSubmenu
+Key H M A MenuLeaveSubmenu
+##Key J M A MenuLeaveSubmenu
+Key C M A MenuMoveCursor -1
+##Key I M A MenuMoveCursor -1
+Key T M A MenuMoveCursor +1
+##Key K M A MenuMoveCursor +1
+
+
+
+#--------
+# Miscellaneous Configurations
+#----------------
+
+#	Application colorsets are used in menus@default and menus-programs@default,
+#	functions@default, functions-appbind@default and other components.
+#	Examples:
+
+# Module FvwmConsole -fg $[fg.cs22] -bg $[bg.cs22]
+# Exec exec xterm -fg $[fg.cs31] -bg $[bg.cs31] -e su -l
+# Exec exec xterm -fg $[fg.cs32] -bg $[bg.cs32] -T "Remote" -e rsh tiger
+# Exec exec xterm -fg $[fg.cs33] -bg $[bg.cs33] -T "File Viewer" -e less "$0"
+# FvwmScript FvwmScript-ThemesCenter --text-colorset 36 --viewer-colorset 33
+# FvwmScript FvwmScript-IconBrowser --text-colorset 36 --icon-colorset 10

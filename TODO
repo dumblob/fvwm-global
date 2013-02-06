@@ -1,0 +1,13 @@
+common.lib
+init.conf
+binding/cz
+binding/czd(dvorak)
+binding/czd(dvorakp)
+binding/mouse binding/us(dvorak)
+menu/menus
+optional/taskbar0
+
+xwininfo -root -tree
+xprop
+  takto mohu cekat az se tam objevi ten pid a pote okno "zviditelnit" (
+    presunout na danou plochu)

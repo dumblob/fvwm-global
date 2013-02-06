@@ -1,0 +1,3 @@
+cd /usr/share/pixmaps
+for i in *.{png,xpm}; do convert "$i" -resize 20 "mini/$i"; done
+

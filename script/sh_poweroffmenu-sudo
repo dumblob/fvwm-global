@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Generate "sudo" poweroff menu.
+# usage: sh_poweroffmenu-sudo menu1 menu2
+#  menu1 = name of menu, where to place power off functionality
+#  menu2 = name of menu, where to place locking, etc. possibilities
+
+locker="$("$(dirname "$0")/sh_poweroffmenu-choose_locker")"
+
+pm-is-supported --suspend        && echo AddToMenu $1 \"\$[gt.Suspend to RAM]%system-shutdown%\"         Exec "$locker" \& sleep 1\; exec sudo pm-suspend;
+pm-is-supported --hibernate      && echo AddToMenu $1 \"\$[gt.Hibernate and shutdown]%system-shutdown%\" Exec "$locker" \& sleep 1\; exec sudo pm-hibernate;
+pm-is-supported --suspend-hybrid && echo AddToMenu $1 \"\$[gt.Hibernate and suspend]%system-shutdown%\"  Exec "$locker" \& sleep 1\; exec sudo pm-suspend-hybrid;
+echo AddToMenu $1 \"\$[gt.Shutdown]%help%\" Exec exec sudo halt;
+echo AddToMenu $1 \"\$[gt.Reboot]%help%\"   Exec exec sudo reboot;
+
+# try to include some other items to the $2 menu
+. "$(dirname "$0")/sh_poweroffmenu-misc" "$2"

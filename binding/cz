@@ -1,0 +1,133 @@
+
+
+
+
+
+
+
+
+
+
+#	kliknuti kamkoliv do okna (i na ramecek apod.) -> focus
+
+
+
+
+
+
+
+
+
+
+
+#	napsat bindings na void fce !!!!!!! (otestovat mod1-5 !!)
+
+
+
+
+
+
+
+
+
+
+#--------
+# FvwmRearrange
+#----------------
+
+#FvwmRearrange -tile -h -m -noanimates -nomaximize -resize -u
+#-u untitled_windows_are_also_affected
+#-t transient_windows_are_also_affected
+#-r reverse_the_window_sequence
+#-mn arg
+
+
+
+
+
+
+
+
+
+
+
+#	DISABLE menu bindings !!!!!!!!!!!! man fvwm: line 1620
+#	STROKE !!!!!! man fvwm: line 4507
+
+
+
+
+
+
+
+
+
+
+
+
+#--------
+# Keyboard
+#----------------
+
+# TEST binding
+Key F1 A C NoOptionFunc
+
+#Key L_Ctrl A C Echo ==> zmacknuta klavesa: 
+#Key F1 A C Echo ==> zmacknuta klavesa: 
+#Key F1 A C Echo ==> zmacknuta klavesa: 
+#Key F1 A C Echo ==> zmacknuta klavesa: 
+#Key F1 A C Echo ==> zmacknuta klavesa: 
+#Key F1 A C Echo ==> zmacknuta klavesa: 
+
+#	Open root menu
+Key Menu A A Menu FvwmRootMenu Root o50+3p o20
+
+#	execute xterm
+#Key F12 A A Exec exec $[fvwm_term]
+
+#	Open the WindowList which lists the running applications when alt-tab is pushed
+#	and then switches to the application you selected when the alt key is released
+Key Tab A M WindowList Root o50 o30 NoDeskNum, NoLayer, NoNumInDeskTitle, \
+	NoCurrentDeskTitle, MaxLabelWidth 50, Icons, ShowPageX, \
+	NoHotkeys, SelectOnRelease Alt_L
+#ShowScreen, ShowPage[X|Y], NoGeometryWithInfo, NoDeskSort
+
+#	delete the active window when Alt + Q is pressed \
+#	(when no window is active, do nothing)
+Silent Key Q A M Delete
+
+#	switch to the next desktop, wrap switch at the end
+# Scroll horizontal[p] vertical[p] | reverse
+Key Right	A M GotoPage wrapx +1p 0p
+Key Left		A M GotoPage wrapx -1p 0p
+Key L			A M GotoPage wrapx +1p 0p
+Key J			A M GotoPage wrapx -1p 0p
+
+#	switch to next window on this page (asdw + 1right = sdfe)
+#Key F A M ScanForWindow North East (CurrentGlobalPage, AnyScreen) EWMHActivateWindowFunc
+#Key S A M ScanForWindow South West (CurrentGlobalPage, AnyScreen) EWMHActivateWindowFunc
+#Key E A M ScanForWindow East North (CurrentGlobalPage, AnyScreen) EWMHActivateWindowFunc
+#Key D A M ScanForWindow West South (CurrentGlobalPage, AnyScreen) EWMHActivateWindowFunc
+
+Key F A M Direction East	(CurrentGlobalPage, AnyScreen) EWMHActivateWindowFunc
+Key S A M Direction West	(CurrentGlobalPage, AnyScreen) EWMHActivateWindowFunc
+Key E A M Direction North	(CurrentGlobalPage, AnyScreen) EWMHActivateWindowFunc
+Key D A M Direction South	(CurrentGlobalPage, AnyScreen) EWMHActivateWindowFunc
+
+
+
+#--------
+# Miscellaneous Configurations
+#----------------
+
+#	Application colorsets are used in menus@default and menus-programs@default,
+#	functions@default, functions-appbind@default and other components.
+#	Examples:
+
+# Module FvwmConsole -fg $[fg.cs22] -bg $[bg.cs22]
+# Exec exec xterm -fg $[fg.cs30] -bg $[bg.cs30]
+# Exec exec xterm -fg $[fg.cs31] -bg $[bg.cs31] -e su -l
+# Exec exec xterm -fg $[fg.cs32] -bg $[bg.cs32] -T "Remote" -e rsh tiger
+# Exec exec xterm -fg $[fg.cs33] -bg $[bg.cs33] -T "File Viewer" -e less "$0"
+# FvwmScript FvwmScript-ThemesCenter --text-colorset 36 --viewer-colorset 33
+# FvwmScript FvwmScript-IconBrowser --text-colorset 36 --icon-colorset 10

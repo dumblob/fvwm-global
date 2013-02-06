@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Output actual keyboard map for setxkbmap input
+setxkbmap -query -v 7 | awk -F'+' '/symbols/ {print $2}'

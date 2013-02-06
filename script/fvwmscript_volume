@@ -1,0 +1,80 @@
+WindowTitle {volume}
+WindowSize 70 16
+Font "xft:Tahoma:Bold:size=8:antialias=True"
+Colorset 10
+
+Init
+ Begin
+  Set $unmute = (GetOutput {amixer get Master|tail -n1|cut -d[ -f3|cut -d] -f1} 1 -1)
+  If $unmute=={on} Then
+   Begin
+    Do {Exec amixer set Master 20%}
+    Set $title = (GetOutput {sleep 1; amixer get Master|tail -n1|cut -d[ -f2|cut -d] -f1} 1 -1)
+    ChangeTitle 2 $title
+   End
+  Else
+   Begin
+    Set $icon = volume/mute-16.png
+    ChangeIcon 2 $icon
+   End  
+ End
+
+Widget 1
+Property
+ Type ItemDraw
+ Size 16 16
+ Position 0 1
+ Icon volume/decrease-16.png
+ Flags NoFocus NoReliefString
+ Main
+  Case message of
+   SingleClic :
+    Begin
+     Do {Exec amixer set Master 10%-}
+     Set $title = (GetOutput {sleep 1; amixer get Master|tail -n1|cut -d[ -f2|cut -d] -f1} 1 -1)
+     ChangeTitle 2 $title
+    End
+ End
+
+Widget 2
+Property
+ Type ItemDraw
+ Size 35 16
+ Position 16 -1
+ Flags NoFocus Center NoReliefString
+ Main
+  Case message of
+   SingleClic :
+    Begin
+     Set $unmute = (GetOutput {amixer get Master|tail -n1|cut -d[ -f3|cut -d] -f1} 1 -1)
+     If $unmute=={on} Then
+      Begin
+       Do {Exec amixer set Master mute}
+       ChangeTitle 2 {0%}
+      End
+     Else
+      Begin
+       Do {Exec amixer set Master unmute}
+       Set $title = (GetOutput {amixer get Master|tail -n1|cut -d[ -f2|cut -d] -f1} 1 -1)
+       ChangeTitle 2 $title
+      End
+    End
+ End
+
+Widget 3
+Property
+ Type ItemDraw
+ Size 16 16
+ Position 54 1
+ Icon volume/increase-16.png
+ Flags NoFocus NoReliefString
+ Main
+  Case message of
+   SingleClic :
+    Begin
+     Do {Exec amixer set Master 10%+}
+     Set $title = (GetOutput {sleep 1; amixer get Master|tail -n1|cut -d[ -f2|cut -d] -f1} 1 -1)
+     ChangeTitle 2 $title
+    End
+ End
+

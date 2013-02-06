@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Generate some additional menu items if possible.
+# USAGE: source this script from some other "sh_poweroff..." scripts
+
+locker="$("$(dirname "$0")/sh_poweroffmenu-choose_locker")"
+
+[ "$locker" ] && {
+  echo AddToMenu $1 \"\" Nop
+  echo AddToMenu $1 \"\$[gt.Lock Screen]%lock%\" Exec exec "$locker"
+}

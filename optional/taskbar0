@@ -1,0 +1,194 @@
+
+#FIXME
+# ModuleListenOnly -> hodiny v tlacitku fvwmbuttons
+
+#FIXME
+#	hodiny startuji s geometrii -3000-3000
+
+
+
+#--------
+# TaskBar0
+#----------------
+
+Style "TaskBar0" NoTitle, WindowListSkip, !CirculateHit, \
+   !CirculateHitIcon, !CirculateHitShaded, StartsRaised, \
+   FixedSize, FixedPosition, Layer $[fvwm_bar_layer], \
+   StickyAcrossPages, NeverFocus, !Borders, BorderWidth 1, \
+   NoHandles, BorderColorset 12
+
+#StaysOnTop
+#StaysPut
+
+DestroyModuleConfig TaskBar0: *
+
+#--- Setup and Geometry ------------------------------------------------(-(-(-(
+#  Height of taskbar in pixels
+PipeRead 'echo SetEnv taskbar0_height $(( ( 44 * \
+   ( 100 * $[vp.height] + $[fvwm_f] * $[fvwm_eh] - $[fvwm_f] * $[vp.height] ) \
+   ) / ( 100 * $[fvwm_eh] ) ))'
+
+#  Width of taskbar in pixels (linear to $[vp.width])
+PipeRead 'echo SetEnv taskbar0_width \
+   $(( ( 1300 * $[vp.width] ) / $[fvwm_ew] ))'
+#PipeRead "echo SetEnv taskbar0_width $(( ( 1300 * \
+#   ( 100 * $[vp.width] + $[fvwm_f] * $[fvwm_ew] - $[fvwm_f] * $[vp.width] ) \
+#   ) / ( 100 * $[fvwm_ew] ) ))"
+
+#  Geometry of taskbar
+#PipeRead 'echo *TaskBar0: Geometry $[taskbar0_width]x$[taskbar0_height]\
+#+$((($[vp.width]-$[taskbar0_width])/2))+0'
+
+PipeRead 'echo Module FvwmButtons -g $[taskbar0_width]x$[taskbar0_height]+$((($[vp.width]-$[taskbar0_width])/2))+0 TaskBar0'
+#--- Setup and Geometry ------------------------------------------------)-)-)-)
+
+*TaskBar0: Colorset 10
+*TaskBar0: Font "Shadow=0:xft:Sans:DemiBold:size=12:antialias=True"
+
+#*TaskBar0: ButtonGeometry 200x$[taskbar0_height]+0+0
+#*TaskBar0: ButtonGeometry 1x1+0+0
+
+# ( fixed | smart | dumb = fixed nor smart )
+#*FvwmButtons: BoxSize fixed
+
+# relief width ( negative = sunken | positiv = raised )
+*TaskBar0: Frame 1
+
+#--- Content -----------------------------------------------------------(-(-(-(
+*TaskBar0: Rows 1
+#*TaskBar0: Columns $[taskbar0_width]
+
+#----------------------(-(-(-(
+#	radek 1 (icony 32x32)
+#*taskbar-left: (1x2, Container(Columns 4, Frame 0, Padding 0))
+#	*taskbar-left: (Icon terminal/32.png, Action "mrxvt")
+#	*taskbar-left: (Icon firefox/32.png, Action "Exec firefox &")
+##	*taskbar-left: (Icon desktop/32.png, Action ShowDesktop)
+#	*taskbar-left: (1x1)
+#	*taskbar-left: (1x1, Icon forward/16.png, Action (Mouse 1) \
+#		"Menu FvwmRootMenu rectangle $[taskbarwidth]x768+0+0 100 0m", Padding 0)
+#*taskbar-left: (End)
+#----------------------)-)-)-)
+
+#----------------------(-(-(-(
+Style "digitalclock" PositionPlacement +3000 +3000
+
+PipeRead "echo SetEnv fvwm_clock0_width $(( ( 124 * \
+   ( 100 * $[vp.width] + $[fvwm_f] * $[fvwm_ew] - $[fvwm_f] * $[vp.width] ) \
+   ) / ( 100 * $[fvwm_ew] ) ))"
+
+*TaskBar0: ($[fvwm_clock0_width]x1, Swallow (NoFvwmModule, Hints) \
+	"digitalclock" "FvwmScript $./../script/fvwmscript_clock")
+#----------------------)-)-)-)
+
+#----------------------(-(-(-(
+#  Increase value of $[fvwm_iconman_nummanagers] variable by one
+PipeRead 'echo \
+   SetEnv fvwm_iconman_nummanagers $(($[fvwm_iconman_nummanagers]+1))'
+
+#*FvwmIconMan0: NumManagers $[fvwm_iconman_nummanagers]
+
+*FvwmIconMan0: ManagerGeometry 1x1+0+0
+
+PipeRead 'echo \
+   *FvwmIconMan0: ButtonGeometry $[taskbar0_height]x$[taskbar0_height]+0+0'
+
+PipeRead 'echo *TaskBar0: \\( \
+   $(( $[taskbar0_width] - $[fvwm_clock0_width] - $[fvwm_tray0_width] ))x1, \
+   Swallow \\(FvwmModule\\) \\"FvwmIconMan0\\" \
+   \\"Module FvwmIconMan FvwmIconMan0\\" \\)'
+#----------------------)-)-)-)
+
+#----------------------(-(-(-(
+SetEnv fvwm_tray0_width 120
+
+*TaskBar0: ($[fvwm_tray0_width]x1, Padding 0, \
+   Swallow (NoFvwmModule, Hints, Kill, NoRespawn, NoOld) "stalonetray*" \
+   "Exec exec stalonetray --dockapp-mode none --decorations none \
+   --fuzzy-edges 3 --geometry 1x1-3000-3000 \
+   --grow-gravity W --icon-gravity NW \
+   --icon-size \`echo $((($[fvwm_tray0_width]/3)-5))\` \
+   --kludges force_icons_size \
+   --no-shrink true --parent-bg --scrollbars horizontal \
+   --scrollbars-size 10 --scrollbars-highlight orange --skip-taskbar true")
+#--max-geometry \`echo $(($[fvwm_tray0_width]-(2*10)-2))x$(($[taskbar0_height]-2))\` \
+#----------------------)-)-)-)
+#--- Content -----------------------------------------------------------)-)-)-)
+
+
+
+#--------
+# Working Area (Extended Window Manager Hints)
+#----------------
+
+PipeRead 'test $[taskbar0_height] -gt $[fvwm_top_blank_area] && \
+   echo SetEnv fvwm_top_blank_area $[taskbar0_height]'
+
+#  EwmhBaseStruts left right top bottom (in pixels)
+EwmhBaseStruts $[fvwm_left_blank_area] $[fvwm_right_blank_area] \
+   $[fvwm_top_blank_area] $[fvwm_bottom_blank_area]
+
+
+
+#--------
+# Unset Variables
+#----------------
+
+UnsetEnv taskbar0_width
+UnsetEnv taskbar0_height
+UnsetEnv fvwm_clock0_width
+UnsetEnv fvwm_tray0_width
+
+
+
+#--------
+# Urgency handling
+#----------------
+
+DestroyFunc UrgencyFunc
+AddToFunc   UrgencyFunc
++ I Echo --> okno $[w.id] urguje ($[w.name])
+#+ I PipeRead \
+#  'while true ; do \
+#    FvwmCommand "Colorset 7 fg gray" \
+#    sleep 1 \
+#    FvwmCommand "Colorset 7 fg navy" \
+#    sleep 1 \
+#  done'
+
+DestroyFunc UrgencyDoneFunc
+AddToFunc   UrgencyDoneFunc
++ I Echo --> okno $[w.id] KONEC urgence ($[w.name])
+#+ I Nop
+
+AddToFunc   StartFunction
++ I Test (Start) UrgencyFunc
++ I Test (Start) UrgencyDoneFunc
+
+
+
+
+
+
+
+
+
+
+
+#DestroyModuleConfig titleofwindow:*
+#*titleofwindow: Rows 10
+#*titleofwindow: Columns 2
+#*titleofwindow: (2x10, Title "?", Id "A")
+
+#Key Tab .... SomeFunction
+
+#DestroyFunc SomeFunction
+#AddToFunc    SomeFunction
+#+ I KillModule FvwmButtons titleofwindow
+#+ I Prev (CurrentPage, AcceptsFocus) Focus
+#+ I Module FvwmButtons -g 200x20 titleofwindow
+
+#DestroyModuleConfig FE-fc:*
+#*FE-fc: focus_change "SendToModule titleofwindow ChangeButton A Title $[w.name]"
+
+#Module FvwmEvent FE-fc

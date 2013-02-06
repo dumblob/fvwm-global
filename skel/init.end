@@ -1,0 +1,10 @@
+echo "#--------"
+echo "# Fvwm \"Applets\" Configuration"
+echo "#----------------"
+echo
+echo "# Here should you write your personal configuration of fvwm \"applets\","
+echo "#   which can you find in directory $1/optional/"
+echo "#   They are for example: form-pages0, taskbar0, fvwmpager0, slideconsole0"
+echo "# Do NOT write here fvwm GLOBAL behaviour configuration, which fall into"
+echo "#   the \`init.begin' file (for example: common.lib, binding/*,"
+echo "#   module configuration, menus, appearance specific settings and colorsets)."

@@ -1,0 +1,74 @@
+# FIXME
+# http://dryice.name/blog/freebsd/quake-like-terminal-with-fvwm/
+# transient vrstva
+#	NEsmi jit ukoncit !!!!!!!!
+#	NEsmi jit prehodit focus klavesovou zkratkou !!!!!!
+
+#--------
+# SlideConsole0
+#----------------
+
+Style "SlideConsole0" NoTitle, !Handles, Borders, WindowListSkip, \
+   !UsePPosition, EWMHPlacementIgnoreWorkingArea, ResizeOpaque, \
+   !Iconifiable, WindowShadeSteps 20, StartShaded, WindowShadeScrolls, \
+   Sticky, CirculateSkip, VariablePosition, FixedSize, StaysOnTop, \
+   PositionPlacement 50-50w +-$[fvwm_handlewidth]p, \
+   InitialMapCommand SlideConsole0Move
+#PositionPlacement 50-50w 0
+#PositionPlacement 50-50w +-0p
+
+DestroyFunc SlideConsole0Move
+AddToFunc   SlideConsole0Move
+#+ I Style "$[w.resource]" VariablePosition
++ I Move keep w-$[fvwm_handlewidth]p
++ I Style "$[w.resource]" FixedPosition
++ I Layer 9
+
+
+
+
+
+
+
+#vrstva?
+#InitialMapCommand Move keep w-$[fvwm_handlewidth]p
+#VariablePosition, PositionPlacement 50-50w 0-50w
+
+
+
+
+
+
+
+
+
+
+
+AddToFunc StartFunction
+#	you have to know, how to set "resource name" to terminal, \
+#		you want to use in SlideConsole, otherweise you can not use slideconsole
+#	this is for xterm:
++ I None ("SlideConsole0") Exec exec $[fvwm_term] -name SlideConsole0 \
+	-geometry 85x22 -e "while true; do bash; done"
+
+DestroyFunc SlideConsoleUpDown
+AddToFunc   SlideConsoleUpDown
++ I ThisWindow (Shaded) KeepRc EWMHActivateWindowFunc
++ I TestRc (Match) KeepRc WindowShade False South
+#+ I ThisWindow (Shaded) KeepRc WindowShade False South
+#+ I TestRc (Match) KeepRc EWMHActivateWindowFunc
++ I TestRc (!Match) KeepRc WindowShade True
++ I TestRc (!Match) CurrentPageFocusFunc
+
+DestroyFunc CurrentPageFocusFunc_WithSlideConsole
+AddToFunc   CurrentPageFocusFunc_WithSlideConsole
++ I All ("SlideConsole*", Shaded) CurrentPageFocusFunc
+#+ I Echo ==> ZADNE SlideConsole0 shaded okno NEexistuje
+
+*FvwmEvent: new_page CurrentPageFocusFunc_WithSlideConsole
+
+#	Shortcut to handle SlideConsole0
+Key F5 A C All ("SlideConsole0") SlideConsoleUpDown
+#Key F5 A C WindowId id WindowShade toggle
+
+# vim: set ft=fvwm:

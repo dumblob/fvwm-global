@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# path to your battery. make sure it's correct
+if [ "${1}" = "" ]; then
+  BAT_PATH="/sys/class/power_supply/BAT0"
+else
+  BAT_PATH=${1}
+fi
+
+if [ -n "$XAUTHORITY" ]; then
+  BAT_FULL=`cat ${BAT_PATH}/energy_full`
+  BAT_NOW=`cat ${BAT_PATH}/energy_now`
+  #STATUS=`cat ${BAT_PATH}/status`
+  #expr (100*${BAT_NOW})/${BAT_FULL}
+  expr \( 100 \* ${BAT_NOW} \) \/ ${BAT_FULL}
+fi

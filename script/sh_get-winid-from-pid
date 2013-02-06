@@ -1,0 +1,44 @@
+#!/bin/sh
+
+GetWID() {
+  APP=$(ps --no-header -o comm -p $1)
+
+  # loop windows with application's executable name
+  (xwininfo -root -children 2> /dev/null | grep $APP) |
+  while read WID; do
+    WID=$(echo $WID | awk '{print $1}')
+
+    # check if window's PID is matching application's PID
+    [ $(xprop -id $WID _NET_WM_PID | awk '{print $3}') -eq $1 ] && {
+
+      # check window visibility
+      [ $(xwininfo -id $WID | grep 'IsViewable') ] && {
+        echo $WID
+        return 0
+      }
+    }
+  done
+
+  return 1
+}
+
+echo "Look inside of this script first!" >&2
+exit 0
+
+# launch "Eye of GNOME"
+eog -n &
+PID=$!
+
+# It takes a few seconds to launch, hence retries 10 times
+for I in $(seq 10) ; do
+  WID=$(GetWID $PID)
+  [ $? -eq 0 ] && {
+    # move to top-left corner of screen
+    xdotool windowmove $WID 0 0
+    # resize to 800x600
+    xdotool windowsize $WID 800 600
+    exit 0
+  }
+done
+
+kill $PID

@@ -1,0 +1,84 @@
+WindowTitle {mails}
+WindowSize 60 16
+Font "xft:Tahoma:Bold:size=8:antialias=True"
+Colorset 10
+
+Init
+ Begin
+  Do {Exec fetchmail -c > $[fvwm_scripts]/tmp}
+  Set $news = (GetOutput {exec cut -d" " -f2 /home/sazzu/.fvwm/sazzus03/scripts/tmp} 1 -1)
+  If $news=={No} Then
+   Begin
+     Set $title = { 0 msg}
+     ChangeTitle 2 $title
+    End
+  Else
+   Begin
+    If $news==null Then
+     Begin
+      Set $title = { 0 msg}
+      ChangeTitle 2 $title
+     End
+    Else
+     Begin
+      Set $number = (GetOutput {exec cut -d" " -f1 /home/sazzu/.fvwm/sazzus03/scripts/tmp} 1 -1)
+      Set $title = { }$number{ gmail}
+      ChangeTitle 2 $title
+     End
+   End
+ End
+
+PeriodicTasks
+ Begin 
+  If (RemainderOfDiv (GetTime) 120)==0 Then
+   Begin
+    Do {Exec fetchmail -c > $[fvwm_scripts]/tmp}
+    Set $news = (GetOutput {exec cut -d" " -f2 /home/sazzu/.fvwm/sazzus03/scripts/tmp} 1 -1)
+    If $news=={No} Then
+     Begin
+      Set $title = { 0 msg}
+      ChangeTitle 2 $title
+     End
+    Else
+     Begin
+      If $news==null Then
+       Begin
+        Set $title = { 0 msg}
+        ChangeTitle 2 $title
+       End
+      Else
+       Begin
+        Set $number = (GetOutput {exec cut -d" " -f1 /home/sazzu/.fvwm/sazzus03/scripts/tmp} 1 -1)
+        Set $title = { }$number{ gmail}
+        ChangeTitle 2 $title
+       End
+     End 
+   End
+ End
+
+Widget 1
+Property
+ Type ItemDraw
+ Size 16 16
+ Position 0 3
+ Icon mail/16.png
+ Flags NoFocus Right NoReliefString
+ Main
+  Case message of
+   SingleClic :
+    Begin
+    End
+ End
+
+Widget 2
+Property
+ Type ItemDraw
+ Size 44 16
+ Position 17 0
+ Flags NoFocus Right NoReliefString
+ Main
+  Case message of
+   SingleClic :
+    Begin
+    End
+ End

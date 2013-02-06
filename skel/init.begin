@@ -1,0 +1,10 @@
+echo "#--------"
+echo "# Fvwm Global Configuration"
+echo "#----------------"
+echo
+echo "# Here should you write your personal configuration of fvwm global behaviour"
+echo "#   (functions, bindings, fvwm modules configuration, menus, appearance"
+echo "#   specific settings and colorsets). You can find it partly documented"
+echo "#   in the directory $1"
+echo "# Do NOT write here \"applet's\" configuration (for example: form-pages0,"
+echo "#   taskbar0, fvwmpager0, slideconsole0), which belongs to the \`init.end' file."

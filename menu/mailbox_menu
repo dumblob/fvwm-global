@@ -1,0 +1,37 @@
+#--------
+#	http://fvwmwiki.bu-web.de/Scripts/MailMenus
+#----------------
+
+Setenv MAILER '\"exec xterm -e mutt -f \"'
+
+# The following function scans the given mailbox and outputs the appropriate line
+#AddMailbox menu mailboxdir mailbox mail.ico empty.ico
+DestroyFunc AddMailbox
+AddToFunc   AddMailbox
++ I PipeRead 'cd $1; NEW=$(ls -1 $2/new | wc -l | tr -d \" \"); \
+  CURRENT=$(ls -1 $2/cur | wc -l| tr -d \" \"); \
+  echo AddToMenu $0 \
+    "$(if [ $NEW -gt 0 ]; then echo %$3%; else echo %$4%; \
+    fi)$(basename $2)\($NEW-$(expr $NEW + $CURRENT)\)" Exec $[MAILER] $1/$2;'
+
+# This last function generates the whole menu directly
+#SetMailMenu menu menu_title mailbox_directory filter mail.ico empty.ico
+#filter must be either "All", or a list of wanted mailboxes.
+DestroyFunc SetMailMenu
+AddToFunc   SetMailMenu
++ I DestroyMenu recreate $0
++ I AddToMenu $0 '$1' Title
++ I PipeRead 'cd $2 && if test $3 = "All"; then for i in `find . -maxdepth 1 -type d \! -name "." |sort`; \
+  do echo AddMailbox \'$0\' \'$2\' $i \'$4\' \'$5\'; done;\
+  else for i in $3; do echo AddMailbox \'$0\' \'$2\' $i \'$4\' \'$5\'; done;fi'
+
+# You can use this function with the following:
+AddToMenu Mail DynamicPopupAction SetMailMenu 'Mail' 'Mailboxes' '$[HOME]/Mail' 'All' 'menu/mail.xpm' 'menu/empty.xpm'
+
+# If you don't want to display all your mailboxes (ie your postponed mailbox),
+#  you can specify a list of mailboxes to display, instead of 'All'
+AddToMenu Mail DynamicPopupAction SetMailMenu 'Mail' 'Mailboxes' '$[HOME]/Mail' 'inbox fvwm' 'menu/mail.xpm' 'menu/empty.xpm'
+
+#Feel free to submit improvements !
+
+# vim:ft=fvwm

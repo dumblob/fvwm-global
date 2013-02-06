@@ -1,0 +1,657 @@
+
+# FIXME
+# proc nefunguje ve fci TransientOrFullscreen:
+#   TestRc (Match) Break
+
+# FIXME
+# TILING (hlavne NE modul FvwmRearrange, to NEni tiling, ale rozdeleni oken do
+#  mrizky a jeste k tomu strasnym zpusobem, ktery se NEda nastavenimi zmenit)
+
+
+# FIXME
+# v fvwmscript udelat 1x1+vp.width+vp.height okno, ktere se vytvori,
+#   focusuje a zase zavre pri prepnuti na prazdnou plochu/page
+#   -> takze vysledkem bude, ze ZADNE okno bude focused
+
+# FIXME
+# okna zavrena pres moji fci RemovePage si nekdy pamatuji page,
+#   na ktere byly takto zavrena, jakto??? (asi protoze jsou nekorektne - strasne
+#   rychle uzavrena, ale nejsem si jisty)
+
+# FIXME
+# zavirani programu na odebirane page bude s dotazem (optional), ale dotazovani
+#   na zavreni vsech oken na page, ktera bude jedina, a tim padem posledni,
+#   s cislem 0, bude VZDY spusteno (takze NEoptional)
+
+
+#--------
+# Functions Reminder
+#----------------
+
+# DestroyFunc FuncName
+# AddToFunc   FuncName
+# + I (Action to happen immediately)
+# + C (Action to happen on a mouse 'click)
+# + D (Action to happen on a mouse 'double click')
+# + H (Action to happen on a mouse 'hold')
+# + M (Action to happen on a mouse 'motion')
+
+
+
+#--------
+# NoOption Function
+#----------------
+
+DestroyFunc	NoOptionFunc
+AddToFunc   NoOptionFunc
++ I Echo --> byla volana NoOptionFunc z page $[page.nx] s parametry:
++ I Echo $*
+
+
+
+#--------
+# Startup Functions
+#----------------
+
+# Deprecated
+DestroyFunc InitFunction
+DestroyFunc RestartFunction
+
+# Executed each time, the configuration file is read.
+DestroyFunc StartFunction
+AddToFunc   StartFunction
+# Executed only after first initialization of fvwm
+#+ I Test (Init) Exec exec stalonetray -d all -geometry 124x24-0-0 -i 64 --sticky
+# Executed each time fvwm is restarted
+#+ I Test (Restart) Nop
+# Executed each time fvwm is started
++ I Test (Start) Module FvwmCommandS
++ I Test (Start) FocusLastWinOnNewPage
+#+ I PrintInfo ImageCache 1
+#+ I PrintInfo Locale 2
+#+ I PrintInfo nls
+#+ I PrintInfo style 1
+#+ I PrintInfo bindings
+
+#  If you use aliases for FvwmEvent, you can NOT put this into StartFunction
+Module FvwmEvent CommonEvents
+# NOTE: There are more commands executed by the `StartFunction' (some of
+#   them are in the optional parts of this fvwm configuration
+
+# Executed each time fvwm is exited (on system halt too!)
+DestroyFunc ExitFunction
+AddToFunc   ExitFunction
+#  Set user defined xkbmap and load suitable bindings ------ PART 2 of 2 ------
++ I PipeRead '[ ! -d $[FVWM_USERDIR] ] && mkdir -p $[FVWM_USERDIR] && \
+  $./skel/xkbmap > $[FVWM_USERDIR]/xkbmap'
+#  Remember number of pages when restarting fvwm --------- PART 1 of 2 --------
++ I Test (ToRestart) SetEnv fvwm_current_number_of_pages $[desk.pagesx]
++ I PipeRead 'echo Echo _____ FVWM $[version.num] EXIT \[$(date +%Y-%m-%d\\ %H:%M:%S)\] _____'
+
+
+
+#--------
+# Window Functions
+#----------------
+
+##	Default
+DestroyFunc WindowListFunc
+AddToFunc   WindowListFunc
+#+ I FlipFocus
++ I Focus NoWarp
++ I Raise
+#+ I WindowShade False
+#+ I WarpToWindow 5p 5p
+
+##	Default
+DestroyFunc EWMHActivateWindowFunc
+AddToFunc   EWMHActivateWindowFunc
++ I WindowShade False
++ I Iconify False
++ I FlipFocus
++ I Raise
+
+##	Default
+DestroyFunc FuncFvwmRaiseLowerX
+AddToFunc   FuncFvwmRaiseLowerX
++ I Raise
++ M $0
++ D Lower
+
+##  Default
+DestroyFunc UrgencyFunc
+AddToFunc   UrgencyFunc
++ I Nop
+
+DestroyFunc UrgencyDoneFunc
+AddToFunc   UrgencyDoneFunc
++ I Nop
+
+DestroyFunc FvwmDeleteOrDestroy
+AddToFunc   FvwmDeleteOrDestroy
++ C Delete
++ D Destroy
+
+DestroyFunc FvwmIconifyOrShade
+AddToFunc   FvwmIconifyOrShade
++ C Iconify
++ D WindowShade
+
+#	FvwmWindowShade ( True | False )
+DestroyFunc FvwmWindowShade
+AddToFunc   FvwmWindowShade
++ C WindowShade $0
+
+#	FvwmMaximizeOrMove <% of screen height> <% of screen width>
+DestroyFunc FvwmMaximizeOrMove
+AddToFunc   FvwmMaximizeOrMove
++ H Nop
++ M Move
++ D Maximize $0 $1
++ D EWMHActivateWindowFunc
+
+DestroyFunc FvwmMoveOrIconify
+AddToFunc   FvwmMoveOrIconify
++ M Move
++ D Iconify
+
+DestroyFunc IconManIconify
+AddToFunc   IconManIconify
++ I ThisWindow (!Iconic, Focused) Iconify True
++ I TestRc (NoMatch) EWMHActivateWindowFunc
+
+DestroyFunc IconManMoveToCurrentPage
+AddToFunc   IconManMoveToCurrentPage
++ I Echo --> zmacknul jsem Alt + LMB-mouse_click
++ C MoveToPageAndActivate
+
+DestroyFunc MoveCurrentWinAndViewportLeftRight
+AddToFunc   MoveCurrentWinAndViewportLeftRight
++ I Current MoveToPage wrapx $0 0p
++ I GotoPage wrapx $0 0p
+
+DestroyFunc MoveToPageAndActivate
+AddToFunc   MoveToPageAndActivate
++ I MoveToPage $0
++ I EWMHActivateWindowFunc
+
+
+
+#--------
+# Different Complex Functions
+#----------------
+
+DestroyFunc TransientOrFullscreen
+AddToFunc   TransientOrFullscreen
++ I ThisWindow (Transient) Layer 0 $[fvwm_transient_layer]
+# FIXME
+#+ I TestRc (Match) Echo 1 match
+#+ I TestRc (NoMatch) Echo 0 nomatch
+#+ I TestRc (Error) Echo -1 error
+#+ I TestRc (Break) Echo -2 break
+#+ I Echo ^-------------------^
++ I ThisWindow (Transient) Break
++ I PipeRead \
+  'if [ $[cw.width] -eq $[vp.width] -a $[cw.height] -eq $[vp.height] ]; then \
+     echo Layer 0 $[fvwm_fullscreen_layer]; \
+     echo Break; \
+   else \
+     echo ThisWindow \\( Layer $[fvwm_fullscreen_layer] \\) Layer default; \
+   fi'
+
+DestroyFunc TransientOrFullscreenOrRearrange
+AddToFunc   TransientOrFullscreenOrRearrange
++ I TransientOrFullscreen
+#+ I TestRc (NoMatch) Break
+#+ I Echo --> if exist transient or fullscreen win > NEma se tato zprava objevit !
+#+ I Echo --> na $[page.nx] NEexistuje transient ani fullscreen
+#+ I All (CurrentGlobalPage, AnyScreen, !Overlapped, Layer $[fvwm_put_layer]) \
+#   Break
++ I Any (CurrentGlobalPage, AnyScreen, Overlapped, Layer $[fvwm_put_layer]) \
+   Rearrange
+
+DestroyFunc Rearrange
+AddToFunc   Rearrange
++ I PipeRead 'echo 0 > $[FVWM_USERDIR]/wins_on_this_page'
++ I All (CurrentGlobalPage, AnyScreen, Layer $[fvwm_put_layer], !Iconic) \
+   PipeRead 'echo $\(\(\`head -n 1 $[FVWM_USERDIR]/wins_on_this_page \
+   2> /dev/null\` + 1 \)\) > $[FVWM_USERDIR]/wins_on_this_page'
++ I PipeRead 'echo SetEnv wins_on_this_page \
+   \`head -n 1 $[FVWM_USERDIR]/wins_on_this_page\` ; \
+   rm $[FVWM_USERDIR]/wins_on_this_page'
+
++ I Echo --> fce Rearrange: na page $[page.nx] je oken: $[wins_on_this_page]
+
++ I Test (EnvMatch wins_on_this_page 0) Echo --> pocet oken je 0, takze break
++ I TestRc (Match) Break
++ I Test (EnvMatch wins_on_this_page 1) Echo --> pocet oken je 1, takze break
++ I TestRc (Match) Break
+#+ I PipeRead 'if [ $[wins_en_this_page] -le 1 ]; then \
+#      echo Echo --\> je tady zadne nebo jenom 1 okno, takze break ; \
+#      echo Break ; \
+#   fi'
+
+#+ I Echo --> tato zprava se NEma objevit, jestlize tady je 1 okno
+
+# if jsou 2 okna viditelna (neiconified, na teto page atd.)( = po otevreni
+#   "druheho okna"), pockat na focus toho nove otevreneho a pak spustit rearrange
++ I Test (EnvMatch wins_on_this_page 2) PipeRead \
+  'echo PlaceWinsInGrid; \
+   echo UnsetEnv wins_on_this_page; \
+   echo Break'
+
+#+ I SetEnv w.name.newwin $[w.name]
+
+# if jsou 3 okna viditelna (neiconified, na teto page atd.)( = po otevreni
+#   "tretiho okna"), pockat na focus nove otevreneho a pustit tiling a
+#   nasledne to nove okno posunout horizontalne doprostred obrazovky
+#+ I Test (EnvMatch wins_on_this_page 3) PipeRead \
+#  'echo Prev \\\(CurrentGlobalPage, AnyScreen, Layer $[fvwm_put_layer]\\\) \
+#      EWMHActivateWindowFunc ; \
+#   for \(\( a=0 ; $a-2 ; a=$a+1 \)\) ; do \
+#      echo Direction East \
+#         \\\(CurrentGlobalPage, AnyScreen, Layer $[fvwm_put_layer], \
+#         !\\\"$\[w.name.newwin]\\\"\\\) EWMHActivateWindowFunc ; \
+#   done ; \
+#   echo All \\\($[w.name.newwin]\\\) EWMHActivateWindowFunc ; \
+#   echo PlaceWinsInGrid ; \
+#   echo Move 50-50w keep ; \
+#   echo UnsetEnv wins_on_this_page ; \
+#   echo UnsetEnv w.name.newwin ; \
+#   echo Break'
+
+# if jsou 4 okna viditelna (neiconified, na teto page atd.)( = po otevreni
+#   "ctvrteho okna"), pockat na focus toho nove otevreneho a pak spustit rearrange
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DestroyFunc RearrangeAfterDestroy
+AddToFunc   RearrangeAfterDestroy
+#+ I Any (CurrentGlobalPage, AnyScreen, Layer $[fvwm_put_layer]) RearrangeDecent
++ I Nop
+# jestlize zbylo 1 okno, tak placeagain a vratit puvodni velikost
+# jestlize zbyly 2 okna, tak preskocit na okno 'dolu doprava dolu' (pokud
+#   mozno nohit circle), pustit rearrange a nakonec vratit fokus, kde byl
+# jestlize zbyly 3 okna, tak preskocit na okno 'dolu doprava dolu' (pokud
+#   mozno nohit circle), pustit rearrange, okno dole horizontalne na stred a
+#   nakonec vratit fokus, kde byl
+# jestlize zbyly 4 okna, tak preskocit na okno 'dolu doprava dolu' (pokud
+#   mozno nohit circle), pustit rearrange a nakonec vratit fokus, kde byl
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#--- Make windows appear on Desk/Page, they were started ---------------(-(-(-(
+#  from shell:
+#     FvwmCommand "StartOnCurrentDesk firefox *Firefox*"
+#  from fvwm:
+#     StartOnCurrentDesk <command> <window name - with wildcards etc.>
+DestroyFunc StartOnCurrentPage
+AddToFunc   StartOnCurrentPage
++ I PipeRead "echo Style $1 SkipMapping, !FPGrabFocus, \
+	!FPFocusByProgram, StartsOnPage $[desk.n] $[page.nx] $[page.ny]"
++ I Exec exec $0
++ I Wait $1
++ I Style $1 !SkipMapping, FPGrabFocus, FPFocusByProgram, StartsAnyWhere
+
+#  or:
+#  make EVERY new widow appear with geometry +3000+3000
+#  a potom ho presunout a udelat s nim, co je treba
+#--- Make windows appear on Desk/Page, they were started ---------------)-)-)-)
+
+#--- Autohide ----------------------------------------------------------(-(-(-(
+#	AutoHide <unique window name/resource> <show delay>
+#	<hide delay> [shade direction]
+DestroyFunc AutoHide
+AddToFunc   AutoHide
++ I ThisWindow ($0) Deschedule $[w.id]
++ I TestRc (!Match) Deschedule -$[w.id]
++ I ThisWindow ($0) KeepRc ThisWindow ($0, Shaded) AutoHideShow $1 $3
++ I TestRc (!Match) All ($0, !Shaded) AutoHideHide $2 $3
+
+DestroyFunc AutoHideShow
+AddToFunc   AutoHideShow
++ I Schedule $0 -$[w.id] WindowShade $1 False
++ I Schedule $0 -$[w.id] WindowShadeAutoHideShow
++ I Schedule $0 -$[w.id] Deschedule $[w.id]
++ I Schedule $0 -$[w.id] Deschedule -$[w.id]
+
+DestroyFunc WindowShadeAutoHideShow
+#AddToFunc   WindowShadeAutoHideShow
+#+ I Nop
+
+DestroyFunc AutoHideHide
+AddToFunc   AutoHideHide
++ I Schedule $0 $[w.id] WindowShadeAutoHideHide
++ I Schedule $0 $[w.id] WindowShade $1 True
++ I Schedule $0 $[w.id] Deschedule $[w.id]
++ I Schedule $0 $[w.id] Deschedule -$[w.id]
+
+DestroyFunc WindowShadeAutoHideHide
+#AddToFunc   WindowShadeAutoHideHide
+#+ I Nop
+#--- Autohide ----------------------------------------------------------)-)-)-)
+
+#--- Focus last focused window when moving around pages -- PART 1 of 2 -(-(-(-(
+DestroyFunc FocusLastWinOnNewPage
+AddToFunc   FocusLastWinOnNewPage
+# FIXME Sticky windows?
++ I SetEnv fvwm_previous_page $[fvwm_current_page]
++ I SetEnv fvwm_current_page $[page.nx]
++ I None (Focused) FocusPrevWinOnThisPage
++ I TestRc (Match) Break
++ I Current (!CurrentPage) FocusPrevWinOnThisPage
+
+DestroyFunc FocusPrevWinOnThisPage
+AddToFunc   FocusPrevWinOnThisPage
++ I None (CurrentGlobalPage, AnyScreen) Break
+# Tohle jede, kdyz NEni nastaveny SloppyFocus (nebo kdyby byl takovy, ktery je
+#   sloppy JENOM pri enter_window a to VYHRADNE za pohybu mysi, NIKDY jindy!)
++ I Prev (CurrentGlobalPage, AnyScreen, !Iconic, !Sticky, AcceptsFocus, \
+   Layer $[fvwm_transient_layer]) EWMHActivateWindowFunc
++ I TestRc (Match) Break
++ I Prev (CurrentGlobalPage, AnyScreen, !Iconic, !Sticky, \
+   Layer $[fvwm_fullscreen_layer]) EWMHActivateWindowFunc
++ I TestRc (Match) Break
+# FIXME [fvwm][CreateConditionMask]: <<DEPRECATED>> Use comma instead of whitespac to separate conditions
+#+ I Prev (CurrentGlobalPage, AnyScreen, !Iconic, !Sticky, \
+#   !Layer $[fvwm_transient_layer], !Layer $[fvwm_fullscreen_layer]) \
+#   EWMHActivateWindowFunc
+#+ I Prev (CurrentGlobalPage, AnyScreen, !Iconic, !Sticky, \
+#   !Layer $[fvwm_transient_layer]) \
+#    Prev (CurrentGlobalPage, AnyScreen, !Iconic, !Sticky, \
+#   !Layer $[fvwm_fullscreen_layer]) EWMHActivateWindowFunc
+#+ I TestRc (Match) Break
++ I Prev (CurrentGlobalPage, AnyScreen, !Iconic, !Sticky) \
+   EWMHActivateWindowFunc
+#--- Focus last focused window when moving around pages -- PART 1 of 2 -)-)-)-)
+
+#--- Fvwm Expose -------------------------------------------------------(-(-(-(
+DestroyFunc FvwmExpose-Action
+AddToFunc   FvwmExpose-Action
++ I WindowId $* Raise
++ I KillModule FvwmButtons FvwmExpose
+
+DestroyFunc FvwmExposeRun
+AddToFunc   FvwmExposeRun
++ I DestroyModuleConfig FvwmExpose: *
+#+ I PipeRead 'echo "*FvwmExpose: Geometry $[vp.width]x$[vp.height]+0+0"'
++ I PipeRead 'echo "*FvwmExpose: Geometry $(($[vp.width]-300))x$(($[vp.height]-300))+0+0"'
++ I *FvwmExpose: BoxSize Fixed
++ I *FvwmExpose: Colorset $[cs-panel-inactive]
++ I *FvwmExpose: ActiveColorset $[cs-panel-active]
++ I *FvwmExpose: Padding 4 4
++ I *FvwmExpose: Frame 0
++ I *FvwmExpose: Font "StringEncoding:UTF-8:xft:Verdana:pixelsize=13:encoding=iso10646-1"
++ I All (!Iconic, !FvwmMiniConsoleNeedsUniqueName, !Shaded, CurrentPage, AcceptsFocus) PipeRead \
+    "echo Raise; xwd -silent -id $[w.id] > /tmp/icon.exp.$[w.id].xwd ; convert -scale 300 -quality 0 xwd:/tmp/icon.exp.$[w.id].xwd png:$[FVWM_USERDIR]/icon.exp.$[w.id].png && \
+     echo '*FvwmExpose: (1x1, Title (Center) \"$[w.name]\", Icon $[FVWM_USERDIR]/icon.exp.$[w.id].png, Action FvwmExpose-Action $[w.id] )'"
++ I Module FvwmButtons FvwmExpose
++ I None (FvwmExpose) Wait
++ I All (FvwmExpose) Layer 0 6
++ I All (FvwmExpose) Raise
++ I Exec exec rm -f $[FVWM_USERDIR]/icon.exp.*
+#--- Fvwm Expose -------------------------------------------------------)-)-)-)
+
+#--- ExposeMenu --------------------------------------------------------(-(-(-(
+# open a menu that consists of the latest screenshots of all windows
+DestroyFunc FvwmReveal
+AddToFunc   FvwmReveal
++ I AddToMenu FvwmExposeMenu "" Title
++ I All (CurrentPage, !Sticky) And \
+   'AddToMenu FvwmExposeMenu "$[w.name]"%/tmp/$[w.id].png% WindowID $[w.id]\\
+   And Raise "Iconify off" "WindowShade off" "WarpToWindow 50 50"'
++ I AddToMenu FvwmExposeMenu DynamicPopDownAction And \
+   "DestroyMenu recreate FvwmExposeMenu"
++ I Menu FvwmExposeMenu
+#--- ExposeMenu --------------------------------------------------------)-)-)-)
+
+#--- Tiling windows ----------------------------------------------------(-(-(-(
+DestroyFunc PlaceWinsInGrid
+AddToFunc   PlaceWinsInGrid
++ I None (CurrentGlobalPage, AnyScreen) Break
++ I PipeRead 'echo Module FvwmRearrange -tile -noanimate -nomaximize \
+  -mn 2 -noraise -s -sp -sd -u -m -resize -nostretch -ewmhiwa \
+  $[fvwm_left_blank_area]p $[fvwm_top_blank_area]p \
+  $\(\($[vp.width]-$[fvwm_right_blank_area]\)\)p \
+  $\(\($[vp.height]-$[fvwm_bottom_blank_area]\)\)p'
+           #         0p 0p \
+           #$\(\($[vp.width]-$[fvwm_right_blank_area]-$[fvwm_left_blank_area]\)\)p \
+           #$\(\($[vp.height]-$[fvwm_top_blank_area]-$[fvwm_bottom_blank_area]\)\)p'
+
+#-tile      ... tile windows, this must be the first argument
+#-animate   ... animated move when not -resize or -maximize
+#-noanimate
+#-h         ... tile horizontally instead of vertically
+#-m         ... affect maximized windows too
+#-maximize  ... put window to maximized state on the end
+#-nomaximize
+#-mn <arg>  ... tile windows up to <arg> in tile direction, jinak se vytvori
+#   novy smerovy radek nebo sloupec (novy matrix) pro pokracovani tilingu
+#-noraise   ... ponecha hloubku zarazeni oken (neaplikuje raise na okna)
+#-resize    ... resize all windows to constrained width and height (if given)
+#-noresize  ... ponecha velikosti oken (neaplikuje resize na okna)
+#-nostretch ... okna se jenom zmensuji, nezvetsuji
+#-r         ... reverse the window sequence
+#-s         ... affect sticky windows too
+#-sp        ... affect sticky across pages windows too
+#-sd        ... affect sticky across desks windows too
+#-t         ... affect transient windows too
+#-u         ... affect untitled windows too
+#<int1>[p] <int2>[p] <int3>[p] <int4>[p] ... p = in pixels
+#   1;2=x;y where to start the first window
+#   3;4=x;y of right bottom point of box for tiling
+
+# vzit v uvahu:
+#   - emulator terminalu
+#   - okna nerada menici velikost
+#   - nove vytvorene okno (z prave spustene aplikace)
+#   - existujici okna
+#   - mozna pouzit prioritu (treba podle castosti prace v nejakem okne -
+#     pocitano podle poctu interakci uzivatele v danem okne)
+#--- Tiling windows ----------------------------------------------------)-)-)-)
+
+
+
+#--------
+# (Virtual) Desktop Functions
+#----------------
+
+DestroyFunc AddPage
+AddToFunc   AddPage
+# move all windows to the right
++ I PipeRead \
+ 'echo DesktopSize $(($[desk.pagesx]+1))x$[desk.pagesy]; \
+  i=$[desk.pagesx]; \
+  while [ ${i} -gt $[page.nx] ]; do \
+    echo GotoPage ${i} 0p; \
+    echo \"All (CurrentGlobalPage, AnyScreen, AcceptsFocus) \
+      MoveToPage +1p 0p\"; \
+    i=$((${i}-1)); \
+  done; \
+  echo SetEnv fvwm_current_page $[page.nx]'
+  # NOTE $[page.nx] is there, because in a few miliseconds, the fvwm-modules
+  #   functions will be `unblocked' and executed (but sometimes it is yet
+  #   done and this assumption fails :( )
++ I Menu FvwmRootMenu Root o50+3p o20
+
+DestroyFunc RemovePage
+AddToFunc   RemovePage
++ I All (!Sticky, CurrentGlobalPage, AnyScreen, AcceptsFocus) Delete
+# FIXME cekej az vsechna okna chcipnou!!!
+# 0123456789
+# ABCDEFGHIJ
+#   |   -       OK
+#   -   |       -1
+#   ?           OK
+#          ?
++ I PipeRead \
+ 'prev=$[fvwm_previous_page]; echo Echo prev ${prev} curr $[fvwm_current_page]; \
+  if [ ${prev} -eq $(($[desk.pagesx]-1)) -o ${prev} -gt $[page.nx] ]; then \
+    page_to_go=$((${prev}-1)); \
+  else \
+    page_to_go=${prev}; \
+  fi; \
+  i=$(($[page.nx]+1)); \
+  while [ ${i} -le $[desk.pagesx] ]; do \
+    echo GotoPage ${i} 0p; \
+    echo \"All (CurrentGlobalPage, AnyScreen, AcceptsFocus) \
+      MoveToPage -1p 0p\"; \
+    i=$((${i}+1)); \
+  done; \
+  echo GotoPage ${page_to_go} 0p; \
+  echo SetEnv fvwm_current_page ${prev}; \
+  echo DesktopSize $(($[desk.pagesx]-1))x$[desk.pagesy]'
+  # NOTE $[page.nx] is there, because in a few miliseconds, the fvwm-modules
+  #   functions will be `unblocked' and executed (but sometimes it is yet
+  #   done and this assumption fails :( )
+
+
+
+#--------
+# Menu Functions
+#----------------
+
+DestroyFunc MenuPagesFunc
+AddToFunc   MenuPagesFunc
++ I DestroyMenu recreate $0
++ I PipeRead \
+  'a=0; while [ $a -lt $[desk.pagesx] ]; do \
+     if [ $a -eq $[page.nx] ]; then \
+       echo AddToMenu $0 \\"\$[gt.Page] $a \\($[gt.Current]\\)%window.xpm%\\" \
+         MoveToPageAndActivate; \
+     else \
+       echo AddToMenu $0 \\"\$[gt.Page] $a%window.xpm%\\" \
+         MoveToPageAndActivate \\"$a 0p\\"; \
+     fi; \
+     a=$(($a+1)); \
+   done'
+
+DestroyFunc MenuWindowOpsFunc
+AddToFunc   MenuWindowOpsFunc
++ I DestroyMenu recreate $0
++ I AddToMenu $0 "$[gt.Page] ($[w.page])%window.xpm%" \
+   Popup PagesMenu
++ I AddToMenu $0 "$[gt.Close]%window-close.xpm%" \
+   Popup CloseWinMenu
++ I PointerWindow (!Iconic, !CirculateHit) \
+   AddToMenu $0 "$[gt.Iconify]%window-iconify.xpm%" Iconify True
++ I ThisWindow (Shaded) AddToMenu $0 "$[gt.UnShade]%window-shade.xpm%" \
+   WindowShade False
++ I TestRc (NoMatch)    AddToMenu $0 "$[gt.Shade]%window-shade.xpm%" \
+   WindowShade True
++ I ThisWindow (Sticky) AddToMenu $0 "$[gt.UnStick]%window-stick.xpm%" \
+   Stick False
++ I TestRc (NoMatch)    AddToMenu $0 "$[gt.Stick]%window-stick.xpm%" \
+   Stick True
++ I AddToMenu $0 "$[gt.(Un)Maximize]%window-maximize.xpm%" \
+   Popup MaximizeMenu
++ I AddToMenu $0 "$[gt.Enlarge]%ty_ikony_co_ma_mys_nad_border%" \
+   Popup EnlargeMenu
++ I AddToMenu $0 "" Nop
++ I AddToMenu $0 "$[gt.Interactive resize]%window-resize.xpm%" \
+   Resize
++ I AddToMenu $0 "$[gt.Interactive move]%window-move.xpm%" \
+   Move
++ I AddToMenu $0 "$[gt.Layer] ($[w.layer])%window.xpm%" \
+   Popup LayerMenu
++ I AddToMenu $0 "$[gt.Other Window Operations]%window.xpm%" \
+   Popup OtherWinOperationsMenu
+
+
+
+#--------
+# Style and Color Functions
+#----------------
+
+#	These 2 functions are executed when you enter (Start) and when you leave
+#	(Stop) this component. For example, in colors@blackbox they are used to
+#	set/unset a good window "transparency" style ParentalRelativity/Opacity;
+#	in colors@cde and colors@luthien these functions are used for more things.
+#DestroyFunc FuncFvwmStartColors
+#AddToFunc   FuncFvwmStartColors
+#DestroyFunc FuncFvwmStopColors
+#AddToFunc   FuncFvwmStopColors
+
+#	background for window title, buttons and border
+#DestroyFunc FuncFvwmDecorBackground
+#AddToFunc   FuncFvwmDecorBackground
+#+ I TitleStyle ActiveUp   (Solid rgb:CC/BA/99 -- Raised)
+#+ I TitleStyle ActiveDown (Solid rgb:CC/BA/99 -- Raised)
+#+ I TitleStyle Inactive   (Solid rgb:88/7C/66 -- Raised)
+#+ I TitleStyle ToggledActiveUp   (Solid rgb:CC/BA/99 -- Raised)
+#+ I TitleStyle ToggledActiveDown (Solid rgb:CC/BA/99 -- Raised)
+#+ I TitleStyle ToggledInactive   (Solid rgb:88/7C/66 -- Raised)
+#+ I ButtonStyle All Pixmap 16x16/empty.xpm
+#+ I ButtonStyle All -- UseTitleStyle
+
+
+
+#--------
+# Different Program Execution/Launching Functions
+#----------------
+
+#DestroyFunc	Volume
+#AddToFunc   Volume
+#+ I Exec exec $./script/sh_volume $0 > /dev/null
+
+#DestroyFunc	AudioPlayer
+#AddToFunc   AudioPlayer
+#+ I Exec exec $./script/sh_mpris2 $0 > /dev/null
+
+#DestroyFunc	MuteAll
+#AddToFunc   MuteAll
+#+ I Exec $./script/sh_muteall $./script/sh_volume $./script/sh_mpris2
+
+DestroyFunc FvwmViewManPage
+AddToFunc   FvwmViewManPage
++ I Exec exec $[fvwm_term] -n "Manual Page - $0" -T "Manual Page - $0" -e man "$0"
+
+DestroyFunc FvwmWindowScreenshot
+AddToFunc   FvwmWindowScreenshot
++ I ThisWindow (!Shaded, !Iconic, Iconifiable) \
+  Exec import -window $[w.id] -quality 100 -silent \
+  "$[fvwm_home]/screenshot/screenshot-$\(date +%F[%R]\).$[w.id].png"
+
+DestroyFunc FvwmDesktopScreenshot
+AddToFunc   FvwmDesktopScreenshot
++ I PipeRead \
+  'if type scrot > /dev/null 2>&1; then \
+    scrot \'screenshot-%d.%m.%Y-%H:%M:%S-$wx$h.png\' -c -d $0 -q 0 \
+      -e \'mv $f $$HOME/pictures/compy/screen/\' > /dev/null; \
+  elif type import > /dev/null 2>&1; then \
+    import -window root -quality 100 -silent \
+      "$[fvwm_home]/pictures/compy/screen/screenshot-$(date +%F[%R]).png" > /dev/null; \
+  else \
+    echo Echo ERROR: No screenshot program found!; \
+  fi'
+
+# usage:
+#Pick (CirculateHit) FvwmWindowScreenshot
+
+# vim:ft=fvwm

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Generate PolicyKit poweroff menu.
+# usage: sh_poweroffmenu-policykit menu1 menu2
+#  menu1 = name of menu, where to place power off functionality
+#  menu2 = name of menu, where to place locking, etc. possibilities
+
+locker="$("$(dirname "$0")/sh_poweroffmenu-choose_locker")"
+
+# some commands stolen from the "mate-polkit"
+pm-is-supported --suspend        && echo AddToMenu $1 \"\$[gt.Suspend to RAM]%system-shutdown%\"               Exec "$locker" \& sleep 1\; exec dbus-send --system --print-reply --dest=org.freedesktop.UPower /org/freedesktop/UPower org.freedesktop.UPower.Suspend
+pm-is-supported --hibernate      && echo AddToMenu $1 \"\$[gt.Hibernate and shutdown]%system-shutdown%\"       Exec "$locker" \& sleep 1\; exec dbus-send --system --print-reply --dest=org.freedesktop.UPower /org/freedesktop/UPower org.freedesktop.UPower.Hibernate
+pm-is-supported --suspend-hybrid && echo AddToMenu $1 \"\$[gt.FIXME Hibernate and suspend]%system-shutdown%\"  Exec "$locker" \& sleep 1\; exec dbus-send --system --print-reply --dest=org.freedesktop.UPower /org/freedesktop/UPower org.freedesktop.UPower.suspend-hybrid
+echo AddToMenu $1 \"\$[gt.Reboot]%system-shutdown%\"   Exec exec dbus-send --system --print-reply --dest=org.freedesktop.ConsoleKit /org/freedesktop/ConsoleKit/Manager org.freedesktop.ConsoleKit.Manager.Restart
+echo AddToMenu $1 \"\$[gt.Shutdown]%system-shutdown%\" Exec exec dbus-send --system --print-reply --dest=org.freedesktop.ConsoleKit /org/freedesktop/ConsoleKit/Manager org.freedesktop.ConsoleKit.Manager.Stop
+
+# try to include some other items to the $2 menu
+. "$(dirname "$0")/sh_poweroffmenu-misc" "$2"
+#. ./sh_poweroffmenu-misc "$2"

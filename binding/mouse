@@ -1,0 +1,44 @@
+
+# FIXME interactive move warp vlevo i vpravo na koncich !!!
+
+#--------
+# Mouse
+#----------------
+
+#	To ( next | previous ) page
+Mouse 5 A M GotoPage wrapx +1p 0p
+Mouse 4 A M GotoPage wrapx -1p 0p
+Mouse 5 R N GotoPage wrapx +1p 0p
+Mouse 4 R N GotoPage wrapx -1p 0p
+
+#	Maximize (after double click wherever you want in/on window)
+#	or Move the window with Alt pressed
+# FvwmMaximizeOrMove <horizontally> <vertically>
+Mouse 1 T A FvwmMaximizeOrMove 100 100
+Mouse 1 F M FvwmMaximizeOrMove 100 100
+Mouse 1 S M FvwmMaximizeOrMove 100 100
+Mouse 1 W M FvwmMaximizeOrMove 100 100
+
+#  Open the window ops menu when the Alt is hold and RMB clicks on the window
+Mouse 3 T A ThisWindow (!CirculateHit) Menu WindowOpsMenu
+Mouse 3 F M ThisWindow (!CirculateHit) Menu WindowOpsMenu
+Mouse 3 S M ThisWindow (!CirculateHit) Menu WindowOpsMenu
+Mouse 3 W M ThisWindow (!CirculateHit) Menu WindowOpsMenu
+
+# root menu when the right mouse button is clicked in the root window
+Mouse 3 R A Menu FvwmRootMenu
+
+# Delete or Destroy the window when button number 1 is clicked or double clicked
+Mouse 1 2 A FvwmDeleteOrDestroy
+
+# Iconify or Shade the window when this button is clicked or double clicked
+Mouse 1 1 A FvwmIconifyOrShade
+
+# Bind the FvwmMoveOrIconify function to work on 'Icons' so they can be moved and UnIconified
+Mouse 1 I A FvwmMoveOrIconify
+
+# Shade the active window when you roll up on the mouse wheel
+Mouse 4 T A FvwmWindowShade True
+
+# UnShade the active window when you roll down on the mouse wheel
+Mouse 5 T A FvwmWindowShade False

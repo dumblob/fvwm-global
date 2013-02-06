@@ -1,0 +1,554 @@
+#!/bin/sh
+
+# Complete rewrite of the fvwm-gnome2 script, generating XDG menu for fvwm.
+
+[ $# -eq 1 ] || { echo "USAGE: $0 <root_menu_name>" >&2; }
+
+# terminal emulator for displaying CLI stuff
+type "$VTE_EXE" > /dev/null 2>&1 ||
+type xterm      > /dev/null 2>&1 || VTE_CMD="No terminal emulator found!"
+export VTE_CMD="${VTE_EXE-"xterm"} ${VTE_ARGS-"-ls -class UXTerm -title uxterm \
+  -u8 -g 80x44 -fg grey -bg black -cr orange"} -e "
+
+export XDG_DATA_HOME="${XDG_DATA_HOME-"${HOME}/.local/share"}"
+
+# locale in lower-case as regexp
+# FIXME (LANG cs_CZ.UTF-8; locale -c)
+#       pt
+#       pt_BR
+#       zh_CN
+#       zh_TW
+#       be
+#       be@latin
+#       ca
+#       ca@valencia
+
+export L="$(echo "${LANG-"en"}" | cut -d '_' -f 1-1)"
+# can't be a regexp!
+export SEP='fvwm_progmenu_separator_which_is_really_long_for_sure'
+
+# FIXME budou duplikaty? (otestovat na tatkove pocitaci - klidne pres SSH)
+#   zkusit osetrit wine-extension... primo v AWK
+find -L /usr/share/applications/ \
+        /usr/share/apps/ \
+        /usr/local/share/ \
+        "$XDG_DATA_HOME" \
+        -name '*.[dD][eE][sS][kK][tT][oO][pP]' -type f |
+grep -v -E -e 'wine-extension-[^/]+$' \
+           -e '^/usr/local/share/gnome/apps/Internet/ayttm.desktop$' |
+while read file; do
+  echo "[$SEP]$file"
+  cat "$file"
+done |
+awk '
+BEGIN {
+  FS = /\n/
+  apps_i = 0  # count of valid applications found
+  delete apps[0]  # reserve identifier for global array
+
+  attr_n = 0  # count of attributes
+  attr["filename"]       = ++attr_n
+  attr["lcname"]         = ++attr_n
+  attr["genname"]        = ++attr_n
+  attr["name"]           = ++attr_n
+  attr["categories"]     = ++attr_n
+  attr["exe"]            = ++attr_n
+  attr["icon"]           = ++attr_n
+  attr["path"]           = ++attr_n
+  attr["term"]           = ++attr_n
+  attr["nodisp"]         = ++attr_n
+  attr["type"]           = ++attr_n
+  #attr["startupwmclass"] = ++attr_n
+
+  cat_xdg_n  = 0  # count of main categories
+  cat_xdg_nn = 0  # count of sub categories in the particular main category
+  cat_xdg[++cat_xdg_n            ] = "AudioVideo"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "Audio"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "Video"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "Player"
+  cat_xdg[cat_xdg_n,           -1] = cat_xdg_nn; cat_xdg_nn = 0
+  cat_xdg[++cat_xdg_n            ] = "Development"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "Java"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "Qt"
+  cat_xdg[cat_xdg_n,           -1] = cat_xdg_nn; cat_xdg_nn = 0
+  cat_xdg[++cat_xdg_n            ] = "Education"
+  cat_xdg[++cat_xdg_n            ] = "Game"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "LogicGame"
+  cat_xdg[cat_xdg_n,           -1] = cat_xdg_nn; cat_xdg_nn = 0
+  cat_xdg[++cat_xdg_n            ] = "Graphics"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "RasterGraphics"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "VectorGraphics"
+  cat_xdg[cat_xdg_n,           -1] = cat_xdg_nn; cat_xdg_nn = 0
+  cat_xdg[++cat_xdg_n            ] = "Network"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "FileTransfer"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "InstantMessaging"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "WebBrowser"
+  cat_xdg[cat_xdg_n,           -1] = cat_xdg_nn; cat_xdg_nn = 0
+  cat_xdg[++cat_xdg_n            ] = "Office"
+  cat_xdg[++cat_xdg_n            ] = "Settings"
+  cat_xdg[++cat_xdg_n            ] = "System"
+  cat_xdg[++cat_xdg_n            ] = "Utility"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "FileManager"
+  cat_xdg[cat_xdg_n,   cat_xdg_nn] = "TextEditor"
+  cat_xdg[cat_xdg_n,           -1] = cat_xdg_nn
+  # my new shiny non-XDG categories
+# cat_xdg[++cat_xdg_n] = "Wine"
+# cat_xdg[++cat_xdg_n] = "Unclassified"
+# cat_xdg[++cat_xdg_n] = "NoDisplay"
+# cat_xdg[++cat_xdg_n] = "KDE"
+}
+
+{
+  if (sub(/^[[]'"$SEP"'[]]/, "") > 0) {
+    if (apps[apps_i, attr["type"]] == "Application") {
+      # XDG tryexe
+      while (j > 0 && !err) {
+        j--
+        err = system("[ -x \"" tryexe[j] "\" ] || type \"" tryexe[j] "\" >/dev/null 2>&1")
+      }
+
+      if (err) {
+        print "ERR tryexe: " apps[apps_i, attr["filename"]] | "cat >&2"
+        for (x in attr) { delete apps[apps_i, attr[x]] }
+        err = ""
+      }
+      else {
+        apps[++apps_i, attr["filename"]] = $0
+      }
+    }
+    else {
+      for (x in attr) { delete apps[apps_i, attr[x]] }
+    }
+  }
+  else if (sub(/^[[:space:]]*Name[[]'"$L"'[]][[:space:]]*=[[:space:]]*/, "") > 0) {
+    apps[apps_i, attr["lcname"]] = $0
+  }
+  else if (sub(/^[[:space:]]*GenericName[[:space:]]*=[[:space:]]*/, "") > 0) {
+    apps[apps_i, attr["genname"]] = $0
+  }
+  else if (sub(/^[[:space:]]*Name[[:space:]]*=[[:space:]]*/,        "") > 0) {
+    apps[apps_i, attr["name"]] = $0
+  }
+  else if (sub(/^[[:space:]]*Categories[[:space:]]*=[[:space:]]*/,  "") > 0) {
+    apps[apps_i, attr["categories"]] = $0
+  }
+  else if (sub(/^[[:space:]]*Exec[[:space:]]*=[[:space:]]*/,        "") > 0) {
+    apps[apps_i, attr["exe"]] = $0
+  }
+  else if (sub(/^[[:space:]]*Icon[[:space:]]*=[[:space:]]*/,        "") > 0) {
+    apps[apps_i, attr["icon"]] = $0
+  }
+  else if (sub(/^[[:space:]]*Path[[:space:]]*=[[:space:]]*/,        "") > 0) {
+    apps[apps_i, attr["path"]] = $0
+  }
+  else if (sub(/^[[:space:]]*Terminal[[:space:]]*=[[:space:]]*/,    "") > 0) {
+    apps[apps_i, attr["term"]] = $0
+  }
+  else if (sub(/^[[:space:]]*NoDisplay[[:space:]]*=[[:space:]]*/,   "") > 0) {
+    apps[apps_i, attr["nodisp"]] = $0
+  }
+  else if (sub(/^[[:space:]]*Type[[:space:]]*=[[:space:]]*/,        "") > 0) {
+    apps[apps_i, attr["type"]] = $0
+  }
+  else if (sub(/^[[:space:]]*TryExec[[:space:]]*=[[:space:]]*/,     "") > 0) {
+    tryexe[j++] = $0
+  }
+  #else if (sub(/^[[:space:]]*StartupWMClass[[:space:]]*=[[:space:]]*/, "") > 0) {
+  #  apps[apps_i, attr["startupwmclass"]] = $0
+  #}
+}
+
+END {
+  winepath = ENVIRON["XDG_DATA_HOME"] "/applications/wine/Programs"
+
+  # printf ("DestroyMenu \"%s\"\n", ENVIRON["ROOT_MENU"])
+  # printf ("AddToMenu \"%s\" \"Apps Menu%%gnome-unknown.png%%\" Title\n", "'"$1"'")
+
+  # iterate through XDG ".desktop" files previously parsed
+  for (x = 0; x < apps_i; ++x) {
+    # FIXME not needed in here!
+    if (apps[x, attr["nodisp"]] ~ \
+        /^[[:space:]]*([tT][rR][uU][eE]|1)[[:space:]]*$/) {
+      nodisp[x] = "y"
+    }
+
+    # winepath found in filename (introduce a non-XDG category for Wine)
+    if (index(apps[x, attr["filename"]], winepath) > 0) {
+      dir = substr(apps[x, attr["filename"]], length(winepath) + 2)
+      sub(/[/][^/]+[.]desktop[[:space:]]*$/, "", dir)
+      gsub(/[/]/, /[[:space:]]*;[[:space:]]*/, dir)
+
+      print "ERR Following categories found in \"Wine\" .desktop file " \
+          apps[x, attr["filename"]] | "cat >&2"
+
+      if (dir)
+        apps[x, attr["categories"]] = "Wine;" dir ";"
+      else
+        apps[x, attr["categories"]] = "Wine;"
+    }
+    else {
+      # FIXME dirty hacks for nicer menu
+      sub(/Chat;/, "InstantMessaging;",
+          apps[x, attr["categories"]])
+      sub(/(AudioVideoEditing;|Multimedia;)/, "Video;",
+          apps[x, attr["categories"]])
+
+      n = split(apps[x, attr["categories"]], tmp, ";")
+
+      for (y = 1; y <= n; ++y) {
+        if (!tmp[y]) {
+          print "ERR missing trailing ; or empty category in Categories: " \
+              apps[x, attr["filename"]] | "cat >&2"
+          continue
+        }
+
+        iteruj pres main_category:
+        # if (main category found in tmp)
+        #   ulozime ji na dalsi misto do pole main
+        #   break
+        # else
+        #   projdeme subkategorie v aktualni main category
+        #   if (sub category found in tmp)
+        #     ulozime ji na dalsi misto do pole sub
+
+
+        # vytvorit pole polozek, kazda obsahujici pole o 1 nebo 2
+        #   kategoriich (1 => primo v main; 2 => v sub kategorii)
+        # iterate through main categories
+        for (z = 0; z < b; ++z) {
+          sub_found = ""
+
+          # iterate through sub categories
+          for (j = 0; j < cat_xdg[z, -1]; ++j) {
+            if (cat_xdg[z, j] == tmp[y]) {
+              sub_found = "y"
+              categ[x, categ[x, -1]++] = t
+            }
+          }
+
+          # avoid having the same item in the main category as in one or more
+          #   sub menus in that particular main category
+          if (sub_found) continue
+
+          if (cat_xdg[z] == tmp[y]) {
+          }
+
+          if (!categ[...WTF...]) {
+            categ[...WTF...] = "UnClassified"
+          }
+        }
+
+        # only for sorting purposes (only indices will be sorted)
+        to_sort[x] = x
+      }
+    }
+  }
+
+  # FIXME normalize info into following variables: categ label icon cmd nodisp
+
+  qsort(to_sort)
+
+  # FIXME tady uz stavim finalni menu ve spravnem poradi
+
+
+  # build only menu with corresponding sub menus - I like having all
+  #   (sub)menus (preserving order from BEGIN{}) before any regular items
+  for (x = 0; x < b; ++x) {
+    # try to find if this menu will be used
+    for (y = 0; y < i; ++y) {
+      t
+    }
+    if (cat_xdg)
+    if (cat_xdg)
+  }
+
+  # add items in the appropriate (sub)menus
+  for (x = 0; x < i; ++x) {
+    # I like having the NoDisplay category displayed :)
+
+    if (!menu_exists["this menu"]) {
+      # FIXME vytvor ho
+      # FIXME uloz ho do menus[]
+    }
+
+    if (apps[x, attr[""]])
+  }
+}
+
+function qsort(arr, l, r,   med_i, med, tmp, i, store_i) {
+  # {{{
+  if ((r - l) <= 0) return
+
+  med_i = int((l + r) / 2)  # on this index will be our pivot
+  med = arr[med_i]
+
+  tmp = arr[med_i]
+  arr[med_i] = arr[r]
+  arr[r] = tmp
+
+  store_i = l
+
+  for (i = l; i < r; ++i) {
+    if (arr[i] < med) {  # lexical compare
+      # FIXME swap the whole record of values
+      tmp = arr[i]
+      arr[i] = arr[store_i]
+      arr[store_i] = tmp
+
+      store_i++
+    }
+  }
+
+  tmp = arr[store_i]
+  arr[store_i] = arr[r]
+  arr[r] = tmp
+
+  qsort(arr, l, store_i -1)
+  qsort(arr, store_i +1, r)
+}  # }}}
+
+{
+  if (desktop_entry) {
+         if ($0 ~ /^ *[[][^]]*[]] */          ) { desktop_entry       = "" }
+    else if (sub(/^ *Type=/,           "") > 0) { type                = $0 }
+    else if (sub(/^ *Name=/,           "") > 0) { name                = $0 }
+    else if (sub(/^ *Name[[]'"$L"'[]]=/, "") > 0) { lcname            = $0 }
+    else if (sub(/^ *GenericName=/,    "") > 0) { genname             = $0 }
+    else if (sub(/^ *Categories=/,     "") > 0) { categories          = $0 }
+    else if (sub(/^ *Terminal=/,       "") > 0) { term                = $0 }
+    else if (sub(/^ *Icon=/,           "") > 0) { icon                = $0 }
+    else if (sub(/^ *Exec=/,           "") > 0) { exe                 = $0 }
+    else if (sub(/^ *TryExec=/,        "") > 0) { tryexe[tryexe_i++]  = $0 }
+    else if (sub(/^ *Path=/,           "") > 0) { path                = $0 }
+    else if (sub(/^ *NoDisplay=/,      "") > 0) { nodisp              = $0 }
+    #else if (sub(/^ *StartupWMClass=/, "") > 0) { startupwmclass      = $0 }
+  }
+  else if ($0 ~ /^ *[[]Desktop Entry[]] */  ) { desktop_entry = "y" }
+}
+
+END {
+  #IGNORECASE = 1
+
+  if (type == "Application") {
+    while (tryexe_i > 0 && !err) {
+      tryexe_i--
+      err = system("[ -x \"" tryexe[tryexe_i] "\" ] || type \"" tryexe[tryexe_i] "\" >/dev/null 2>&1")
+    }
+
+    if (!err) {
+      filename = ENVIRON["FILE"]
+      winepath = ENVIRON["XDG_DATA_HOME"] "/applications/wine/Programs"
+
+      if (nodisp == 1 || nodisp ~ /^[tT][rR][uU][eE]$/) {
+        cat_final[cat_i++] = "NoDisplay;"
+      }
+      else if (index(filename, winepath) > 0) {
+        cat_dir = substr(filename, length(winepath) + 2)
+        sub(/[/][^/]+[.]desktop *$/, "", cat_dir)
+        gsub(/[/]/, ";", cat_dir)
+        if (cat_dir)
+          cat_final[cat_i++] = "Wine;" cat_dir ";"
+        else
+          cat_final[cat_i++] = "Wine;"
+      }
+      else {
+        # main- and sub- categories
+        cat_xdg[0    ] = 0  # ERROR
+        cat_xdg[1    ] = "AudioVideo"
+        cat_xdg[1001 ] = "Player"
+        cat_xdg[1002 ] = "Video"
+        cat_xdg[1003 ] = "Audio"
+        cat_xdg[2    ] = "Development"
+        cat_xdg[2001 ] = "Java"
+        cat_xdg[2002 ] = "Qt"
+        cat_xdg[3    ] = "Education"
+        cat_xdg[4    ] = "Game"
+        cat_xdg[4001 ] = "LogicGame"
+        cat_xdg[5    ] = "Graphics"
+        cat_xdg[5001 ] = "VectorGraphics"
+        cat_xdg[5002 ] = "RasterGraphics"
+        cat_xdg[6    ] = "Network"
+        cat_xdg[6001 ] = "WebBrowser"
+        cat_xdg[6002 ] = "InstantMessaging"
+        cat_xdg[6003 ] = "FileTransfer"
+        cat_xdg[7    ] = "Office"
+        cat_xdg[8    ] = "Settings"
+        cat_xdg[9    ] = "System"
+        cat_xdg[10   ] = "Utility"
+        cat_xdg[10001] = "TextEditor"
+        cat_xdg[10002] = "FileManager"
+
+        #cat_xdg[10011] = "KDE"
+        #cat_xdg[11   ] = "Unclassified"
+        #cat_xdg[12   ] = "NoDisplay"
+        #cat_xdg[13   ] = "Wine"
+
+        # make sure line with categories ends with the ";" character - needed
+        #   for the split() function
+        sub(/^.*[^;]$/, "&;", categories)
+
+        # FIXME dirty hacks for nicer menu
+        sub(/Chat;/, "InstantMessaging;", categories)
+        sub(/(AudioVideoEditing;|Multimedia;)/, "Video;", categories)
+
+        n = split(categories, list, ";")
+
+        for (y = 1; y < n; y++) {  # split categories
+          for (x = 1; x < 11; x++) {  # main categories
+            if (cat_xdg[x] == list[y]) {  # main category found
+              cat_main[i++] = x
+              break
+            }
+            else {  # item is not main category
+              found = 0
+              z = 1
+              # iterate through all subcategories in the current main category
+              while (cat_xdg[x * 1000 + z]) {
+                if (cat_xdg[x * 1000 + z] == list[y]) {
+                  found = 1
+                  cat_sub[j++] = x * 1000 + z
+                }
+                z++
+              }
+              if (found) break
+            }
+          }  # for()
+        }  # for()
+
+        for (a = 0; a < i; a++) {  # iterate through cat_main
+          found = 0
+          for (b = 0; b < j; b++) {
+            if (cat_main[a] == int(cat_sub[b] / 1000)) {
+              # we dont like having the same item in two (or more) separate
+              #   submenus of one cat_xdg main menu item
+              if (!found) cat_sub_found = cat_sub[b]
+              found++
+            }
+          }
+          if (found == 1)
+            # there is exactly one submenu
+            cat_final[cat_i++] = cat_xdg[cat_main[a]] ";" cat_xdg[cat_sub_found] ";"
+          else
+            # there is no submenu or more of them => do not use any submenu
+            cat_final[cat_i++] = cat_xdg[cat_main[a]] ";"
+        }
+
+        if (!cat_i) cat_final[cat_i++] = "Unclassified;"
+      }  # if()
+
+      sub(/[.]desktop *$/, "", filename)
+      sub(/^[[:space:]]*/, "", filename)
+      gsub(/[^/]+[/]/,     "", filename)  # /path/to/some/file -> /file
+      sub(/[/]/,           "", filename)  # /bin -> bin
+
+      if (lcname)
+        name = lcname
+      else
+        if (!name) {
+          if (genname)
+            name = genname
+          else
+            name = filename
+        }
+
+      # remove any spaces in front of the executable command
+      sub(/^[[:space:]]*/, "", exe)
+
+      # XDG abbreviation handling
+      gsub(/%[fFuUDdnNmv]/, "", exe)
+      gsub(/%i/, "--icon \"" icon "\"", exe)
+      gsub(/%c/, "\"" lcname "\"", exe)
+      gsub(/%k/, "\"'"${FILE}"'\"", exe)
+
+      # no need to escape the executable, because if it is needed, it is
+      #   made yet in the .desktop file
+      if (exe)
+        cmd = exe
+      else
+        cmd = filename
+
+      vte_cmd = ENVIRON["VTE_CMD"]
+
+      if (term == 1 || term ~ /^[tT][rR][uU][eE]$/)
+        cmd = "exec " vte_cmd "\"" cmd "\""
+      else
+        cmd = "exec " cmd
+
+      if (path) cmd = "cd \\\"" path "\\\"; " cmd
+      if (icon)
+        # remove trailing spaces
+        sub(/ +$/, "", icon)
+      else
+        icon = "gnome-unknown"
+
+      for (x = 0; x < cat_i; x++)
+        printf("%s%%%s%%%s%%%s\n", cat_final[x], name, icon, cmd)
+    }  # if()
+  }  # if()
+}'
+
+awk -F% '
+  #BEGIN {
+  #  printf ("DestroyMenu \"%s\"\n", ENVIRON["ROOT_MENU"])
+  #  printf ("AddToMenu \"%s\" \"Apps Menu%%gnome-unknown.png%%\" Title\n", "'"$1"'")
+  #}
+
+  function build_menu(l_cat, l_name, l_icon, l_cmd) {
+    num = split(l_cat, list, ";")
+
+    menu_name = ""
+    parent_menu = ENVIRON["ROOT_MENU"]
+
+    for (i = 1; i < num; i++) {
+      if (list[i])
+        if (menu_name)
+          menu_name = menu_name "-" list[i]
+        else
+          menu_name = list[i]
+      else
+        continue
+
+      if (!exists[menu_name]) {
+        exists[menu_name] = "y"
+        # add this new submenu to the parent_menu
+        printf("AddToMenu \"%s\" \"$[gt.%s]%%folder%%\" Popup \"%s\"\n",
+          parent_menu, list[i], menu_name)
+        # destroy the new submenu
+        printf("DestroyMenu \"%s\"\n", menu_name)
+      }
+
+      #printf("AddToMenu \"%s\" \"%s\" Title\n", menu_name, menu_name)
+
+      # save for next iteration
+      parent_menu = menu_name
+    }
+
+    tmp = l_cmd
+    # avoid misinterpreting standalone (i.e. non-pair) double quote chars in
+    #   fvwm, which might appear after printf() truncation
+    gsub(/\"/,       "\\\"", tmp)
+    while (gsub(/\\\\/, "\\", tmp)) {} # groups of backslashes -> 1 backslash
+    sub(/ +$/,       "",     tmp)      # remove trailing spaces
+    sub(/exec +/,    "",     tmp)      # FIXME "/binary_ending_with_exec "
+    # does the string start with slash?
+    if (sub(/^ *\//, "/", tmp) > 0) {  # remove leading spaces
+      gsub(/[^/]+[/]/, "",   tmp)      # /path/to/some/bin -> /bin
+                                       # FIXME wine /arg0 /arg1
+                                       # FIXME exec xterm -e "/path/0; /path/1"
+      sub(/[/]/,     ".../", tmp)      # /bin -> .../bin
+    }
+
+    printf("AddToMenu \"%s\" \"%0.20s (%0.17s)%%%s%%\" Exec %s\n",
+      menu_name, l_name, tmp, l_icon, l_cmd)
+  }
+
+  {
+    cat = $1
+    name = $2
+    icon = $3
+    cmd = $4
+    build_menu(cat, name, icon, cmd)
+  }
+'
+
+# vim: set ft=awk:

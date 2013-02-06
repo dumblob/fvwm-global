@@ -1,0 +1,43 @@
+#--------
+# FvwmPager0
+#----------------
+
+Style "FvwmPager0" StartShaded, PositionPlacement 50-50w +-1p, \
+   VariablePosition
+# StaysOnTop
+#, InitialMapCommand fvwmpager0_init
+#staysontop
+
+AddToFunc   StartFunction
+#+ I Module FvwmAuto FvwmAutoHide 0 -menter "AutoHide FvwmPager0 0 0 North"
++ I Module FvwmAuto 0 -menter "AutoHide FvwmPager0 0 0 North"
++ I Module FvwmPager FvwmPager0 0 0
+
+DestroyFunc WindowShadeAutoHideShow
+AddToFunc   WindowShadeAutoHideShow
++ I WindowId $[w.id] Style "$[w.resource]" VariablePosition
++ I WindowId $[w.id] Move keep w+1p
++ I WindowId $[w.id] Style "$[w.resource]" FixedPosition
+
+DestroyFunc WindowShadeAutoHideHide
+AddToFunc   WindowShadeAutoHideHide
++ I WindowId $[w.id] Style "$[w.resource]" VariablePosition
++ I WindowId $[w.id] Move keep w-1p
++ I WindowId $[w.id] Style "$[w.resource]" FixedPosition
+
+DestroyFunc fvwmpager0_init
+AddToFunc   fvwmpager0_init
+#+ I Style "$[w.resource]" VariablePosition
++ I Move keep w-1p
++ I Style "$[w.resource]" FixedPosition
+
+
+
+#--------
+# Bindings
+#----------------
+
+Mouse (FvwmPager) 5 W A GotoPage wrapx +1p 0p
+Mouse (FvwmPager) 4 W A GotoPage wrapx -1p 0p
+Mouse (FvwmPager) 5 S A GotoPage wrapx +1p 0p
+Mouse (FvwmPager) 4 S A GotoPage wrapx -1p 0p

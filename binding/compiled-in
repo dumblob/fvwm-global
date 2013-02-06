@@ -1,0 +1,197 @@
+#--------
+# Bindings Reminder
+#----------------
+
+# typical screen with 1 window and 2 iconified windows
+#  ___________________________________________________
+# |                                 _____  _____      |
+# |                                 | I |  | I |      |
+# |    R               R            |___|  |___|      |
+# |                                                   |
+# |          F_______S_________________S_______F      |
+# |          |13579T__________T__________T08642|      |
+# |          |                                 |      |
+# |         S|                                 |S     |
+# |          |     W                     W     |      |
+# |    R     |                                 |   R  |
+# |          |                                 |      |
+# |         S|     W                     W     |S     |
+# |          |                                 |      |
+# |          |_________________________________|      |
+# |          F     S                     S     F      |
+# |                         R                         |
+# |___________________________________________________|
+
+#	( Mouse | Key ) ID [(window)] Context Modifier Action
+#	  `window' = wildcard (class, resource or name)
+
+##	Mouse ID
+#	1-9 buttons
+
+##	Key ID
+#	Multi_key         ( "right windows key" )
+#	Super_L           ( Windows key )
+#	Alt_L             ( Alt on the left side )
+#	ISO_Level3_Shift  ( Alt on the right side )
+#	Meta_L            ( Alt on PS keyboard )
+#	Control_L, L_Ctrl ( Ctrl on the left side )
+#	/usr/include/X11/keysymdef.h (without the XK_ prefix)
+#	the keysym database /usr/X11R6/lib/X11/XKeysymDB
+
+##	Context: where the mouse is currently located
+#  only S and W are valid for an UNdecorated window !
+#  R  root window
+#  D  desktop application (Kdesktop, Nautilus...)
+#  I  icon window
+#  F  frame corners
+#    < top left
+#    ^ top right
+#    v bottom left
+#    > bottom right
+#  S  window side (left, right, top or bottom)
+#  T  title bar
+#  W  application window
+#  0-9 title-bar buttons or any combination of these letters
+#  A  anywhere ( it doesn't matter where the mouse is located )
+## Special contexts
+#  M  menu window (look at the 'man fvwm')
+#    T menu title
+#    I menu item
+#    S menu border or sidepic
+#    [ left border including sidepic
+#    ] right border including sidepic
+#    - top border
+#    _ bottom border
+#  P  buttons to place a window (look at the 'man fvwm')
+
+##	Modifier: any combination of the following;
+#  (A)ny modifier (include none)
+#  (C)ontrol
+#  (S)hift
+#  (M)eta ( Alt on PS keyboard )
+#  (L)Caps-Lock
+#  (N)o modifier
+#  1-5 the X Modifiers mod1-mod5 (man xmodmap)
+#  S3,3M,3,...
+
+
+
+#--------
+# Compiled-in bindings
+#----------------
+#  Uncomment = DISABLE
+
+#--- Keyboard ----------------------------------------------------------(-(-(-(
+#  Key Help R A Popup MenuFvwmRoot
+#Key Help R A -
+
+#  Key F1 R A Popup MenuFvwmRoot
+Key F1 R A -
+
+#  Key Tab A M WindowList Root c c NoDeskSort
+Key Tab A M -
+
+#  Key Escape A MC EscapeFunc
+Key Escape A MC -
+
+#--- Mouse -------------------------------------------------------------(-(-(-(
+#  Mouse 1 R A Menu MenuFvwmRoot
+Mouse 1 R A -
+
+#  Mouse 1 T A FuncFvwmRaiseLowerX Move
+Mouse 1 T A -
+
+#  Mouse 1 FS  A FuncFvwmRaiseLowerX Resize
+#Mouse 1 FS  A -
+
+#  Mouse 2 FST A FuncFvwmRaiseLowerX Move
+Mouse 2 FST A -
+
+#--- Menu Keyboard -----------------------------------------------------(-(-(-(
+#  Enter, Return, Space activate the current item.
+Key Return M A -
+#Key Space M A -
+
+#  Escape, Delete, Ctrl-G exit the current sequence of menus or destroy
+#  a tear off menu.
+#Key Escape M A -   # it is NOT possible disable Escape in menu
+Key Delete M A -
+Key G M C -
+
+#  J, N, Cursor-Down, Tab, Meta-Tab, Ctrl-F, move to the next item.
+Key J M A -
+Key N M A -
+#Key Down M A -
+#Key Tab M A -
+Key Tab M M -
+Key F M C -
+
+#  K, P, Cursor-Up, Shift-Tab, Shift-Meta-Tab, Ctrl-B, move to the prior item.
+Key K M A -
+Key P M A -
+#Key Up M A -
+#Key Tab M S -
+Key Tab M SM -
+Key B M C -
+
+#  L, Cursor-Right, F enter a sub menu.
+Key L M A -
+#Key Right M A -
+Key F M A -
+
+#  H, Cursor-Left, B return to the prior menu.
+Key H M A -
+#Key Left M A -
+Key B M A -
+
+#  Ctrl-Cursor-Up, Ctrl-K, Ctrl-P, Shift-Ctrl-Meta-Tab, Page-Up move up 5 items.
+Key Up M C -
+Key K M C -
+Key P M C -
+Key Tab M SCM -
+#Key Prior M A -
+
+#  Ctrl-Cursor-Down, Ctrl-J, Ctrl-N, Ctrl-Meta-Tab, Page-Down move down 5 items.
+Key Down M C -
+Key J M C -
+Key N M C -
+Key Tab M CM -
+#Key Next M A -
+
+#  Shift-P, Home, Shift-Cursor-Up, Ctrl-A move to the first item.
+Key P M S -
+#Key Home M A -
+Key Up M S -
+Key A M C -
+
+#  Shift-N, End, Shift-Cursor-Down, Ctrl-E move to the last item.
+Key N M S -
+#Key End M A -
+Key Down M S -
+Key E M C -
+
+#  Meta-P, Meta-Cursor-Up, Ctrl-Cursor-Left, Shift-Ctrl-Tab, move up just
+#  below the next separator.
+Key P M M -
+Key Up M M -
+Key Left M C -
+Key Tab M SC -
+
+#  Meta-N, Meta-Cursor-Down, Ctrl-Cursor-Right, Ctrl-Tab, move down just
+#  below the next separator.
+Key N M M -
+Key Down M M -
+Key Right M C -
+Key Tab M C -
+
+#  Insert opens the "More..." sub menu if any.
+Key Insert M A -
+
+#  Backspace tears off the menu.
+Key BackSpace M A -
+
+#--- Menu Mouse --------------------------------------------------------(-(-(-(
+#  MMB on menu title make it tear off (it is good for trotting out)
+#Mouse 2 MT A -
+
+# vim:ft=fvwm

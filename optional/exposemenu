@@ -1,0 +1,135 @@
+﻿################################################################################
+#
+# SCREENSHOT WINDOWLIST
+#
+################################################################################
+
+################################################################################
+# NOTES
+################################################################################
+
+# this file contains code to screen capture individual windows, shrink the image to a thumbnail
+# and build a windowlist-like menu with the screenshots
+
+# the idea is based on taviso's FvwmExpose, and the code is derived from that
+
+# requires a png image that is 128x96 solid transparent 
+# must be named $SCREENSHOT_ICONDIR/template.png
+# also needs ImageMagick convert and composite
+
+# to do: 
+# make a menu for all windows, sorted by desk
+# filter out characters such as ',",`,%,*, etc. from window names
+#   this is quite tricky and may require an external script
+
+
+################################################################################
+# INITIALIZATION
+################################################################################
+
+SetEnv SCREENSHOT_ICONDIR $[FVWM_USERDIR]/cache/screenshot_icons
+
+MenuStyle * SelectOnRelease Super_L
+
+
+################################################################################
+# FUNCTIONS
+################################################################################
+
+# stripped down version of taviso's Thumbnail function
+# makes a screenshot icon of the focused window
+DestroyFunc ScreenShotThumbnail
+AddToFunc ScreenShotThumbnail
++ I     ThisWindow (Visible) Exec \
+        xwd -silent -id $[w.id] | \
+        convert -scale 126x94 -frame 1x1 -mattecolor black -quality 0 xwd:- png:$[SCREENSHOT_ICONDIR]/$[w.id].png >&/dev/null ; \
+        composite -gravity center $[SCREENSHOT_ICONDIR]/$[w.id].png $[SCREENSHOT_ICONDIR]/template.png $[SCREENSHOT_ICONDIR]/$[w.id].png >&/dev/null &
+
+
+## stripped down version of taviso's FvwmExpose function
+## generates a windowlist-like menu of all windows on the current desk,
+## using screenshot thumbnails as icons
+#DestroyFunc ShowScreenShotMenu
+#AddToFunc ShowScreenShotMenu
+#+ I     DestroyMenu ScreenShotMenu
+#+ I     PipeRead 'echo AddToMenu ScreenShotMenu \\"\\$\[desk.name$[desk.n]\]\\" Title'
+#+ I     AddToMenu ScreenShotMenu DynamicPopDownAction DestroyMenu ScreenShotMenu
+#+ I     AddToMenu ScreenShotMenu "%mini.windows.xpm% W I N D O W   L I S T" WindowList
+#+ I     All (!Iconic, !Shaded, CurrentDesk, AcceptsFocus) \
+#        AddToMenu ScreenShotMenu "%$[SCREENSHOT_ICONDIR]/$[w.id].png%$[w.name]" \
+#        WindowId $[w.id] WindowListFunc
+#+ I     All (Iconic, !Shaded, CurrentDesk, AcceptsFocus) \
+#        AddToMenu ScreenShotMenu "%$[SCREENSHOT_ICONDIR]/$[w.id].png%($[w.name])" \
+#        WindowId $[w.id] WindowListFunc
+#+ I     Any (!Shaded, CurrentDesk, AcceptsFocus) Menu ScreenShotMenu
+#+ I     TestRc (False) WindowList
+
+# same as above, but truncates the window name if it's too long
+# stripped down version of taviso's FvwmExpose function
+# generates a windowlist-like menu of all windows on the current desk,
+# using screenshot thumbnails as icons
+DestroyFunc ShowScreenShotMenu
+AddToFunc ShowScreenShotMenu
+# if there are no windows on the current desk, do a winlist for all desks
++ I     None (!Shaded, CurrentDesk, AcceptsFocus) WindowList SelectOnRelease Super_L
++ I     TestRc (Match) Break
+# rebuild the screen shot menu
++ I     DestroyMenu ScreenShotMenu
++ I     PipeRead 'echo AddToMenu ScreenShotMenu \\"\\$\[desk.name$[desk.n]\]\\" Title'
++ I     AddToMenu ScreenShotMenu DynamicPopDownAction DestroyMenu ScreenShotMenu
+# this will add a menu entry for each non-iconic window
+# the window name is shortened if longer than 50 chars
+# set -f turns off filename expansion (causes problems when a name has a '*')
++ I     All (!Iconic, !Shaded, CurrentDesk, AcceptsFocus) PipeRead ' \
+        set -f ; \
+        name="$[w.name]" ; \
+        if [[ `echo "${name}" | wc -c` -gt 50 ]] ; \
+        then name=`echo "${name}" | sed -e "s%^\\(.\\{27\\}\\).*\\(.\\{20\\}\\)$%\\1...\\2%g"` ; \
+        fi ; \
+        echo AddToMenu ScreenShotMenu \\"%$[SCREENSHOT_ICONDIR]/$[w.id].png%${name}\\" \
+            WindowId $[w.id] WindowListFunc'
+# this does the same for all iconic windows
+# the only difference is that the name now has parens around it (and the iconic windows go at the end of the menu)
++ I     All (Iconic, !Shaded, CurrentDesk, AcceptsFocus) PipeRead ' \
+        set -f ; \
+        name="$[w.name]" ; \
+        if [[ `echo "${name}" | wc -c` -gt 50 ]] ; \
+        then name=`echo "${name}" | sed -e "s%^\\(.\\{27\\}\\).*\\(.\\{20\\}\\)$%\\1...\\2%g"` ; \
+        fi ; \
+        echo AddToMenu ScreenShotMenu \\"%$[SCREENSHOT_ICONDIR]/$[w.id].png%\\(${name}\\)\\" \
+            WindowId $[w.id] WindowListFunc'
+# and a window list so all windows are accessible
++ I     AddToMenu ScreenShotMenu "%mini.windows.xpm% W I N D O W   L I S T " WindowList SelectOnRelease Super_L
+# show the menu
++ I     Menu ScreenShotMenu
+
+
+################################################################################
+# MODULES
+################################################################################
+
+# an FvwmEvent to screenshot a window every time it is raised
+DestroyModuleConfig FvwmEvent FvwmEventThumbnail
+*FvwmEventThumbnail: Cmd
+*FvwmEventThumbnail: raise_window   ScreenShotThumbnail
+*FvwmEventThumbnail: add_window     ScreenShotThumbnail
+*FvwmEventThumbnail: focus_change   ScreenShotThumbnail
+#*FvwmEventThumbnail: map            ScreenShotThumbnail
+
+
+################################################################################
+# BINDINGS
+################################################################################
+
+Mouse   2       R       A       ShowScreenShotMenu
+Key     Tab     A       4       NoWindow ShowScreenShotMenu
+
+
+################################################################################
+# STARTUP
+################################################################################
+
+KillModule FvwmEvent FvwmEventThumbnail
+Module FvwmEvent FvwmEventThumbnail
+
+Exec exec rm -f $[SCREENSHOT_ICONDIR]/0x*.png

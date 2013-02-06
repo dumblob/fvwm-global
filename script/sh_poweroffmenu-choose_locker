@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# print a string containing an available locker (if none, do nothing)
+
+LOCKER=''
+
+if [ "$LOCKER_EXE" ]; then
+  LOCKER="${LOCKER_EXE} ${LOCKER_ARGS}"
+elif type alock        > /dev/null 2>&1; then
+  LOCKER='alock -auth pam -bg shade:shade=60 -cursor theme:name=xtr,bg=#ff0000'
+elif type slock        > /dev/null 2>&1; then
+  LOCKER='slock'
+elif type xscreensaver > /dev/null 2>&1; then
+  LOCKER='xscreensaver'
+elif type xlock        > /dev/null 2>&1; then
+  LOCKER='xlock'
+else type lock_screen  > /dev/null 2>&1 &&
+  LOCKER='lock_screen'
+fi
+
+[ "$LOCKER" ] && echo "$LOCKER"

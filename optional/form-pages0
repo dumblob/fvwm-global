@@ -1,0 +1,149 @@
+
+#FIXME
+# Sometimes (for example: when you execute this
+# function very fast more than once), it becomes very slow and at the end
+# it doesn't quit itself! You have to generate some event (for example:
+# enter_window) anywhere/anyhow, which will kill this function.
+
+#FIXME
+# geometrii udelat linearne + pripsat popisku do config, ze vsechno, co ma
+# pomer ku cele obrazovce (treba zmenseniny obrazovky apod.)  by melo byt
+# linearni, jinak to vypada blbe
+
+
+
+#--------
+# Form-Pages0 Global Settings
+#----------------
+
+Style "Form-Pages0" NoTitle, WindowListSkip, !CirculateHit, \
+   !CirculateHitIcon, !CirculateHitShaded, StartsRaised, \
+   FixedSize, FixedPosition, PositionPlacement 50-50w 40-50w, \
+   StickyAcrossPages, NeverFocus, Borders, BorderWidth 1, \
+   NoHandles, BorderColorset 12
+#StaysOnTop
+#StaysPut
+
+PipeRead "echo Style \\"Form-Pages0\\" Layer $(($[fvwm_top_layer]+1))"t
+
+
+
+#--------
+# Form-Pages0 Startup
+#----------------
+
+#  You can use the '-' but NOT the '_' character in the alias name!!!
+DestroyModuleConfig Form-Pages0Events: *
+
+*Form-Pages0Events: Cmd Function
+
+*Form-Pages0Events: new_page ShowCurrentPageInMatrixOfWholeDesktop
+*Form-Pages0Events: new_desk ShowCurrentPageInMatrixOfWholeDesktop
+
+#  If you use aliases for FvwmEvent, you can NOT put this into StartFunction
+Module FvwmEvent Form-Pages0Events
+
+
+
+#--------
+# Form-Pages0 Startup Function
+#----------------
+
+DestroyFunc ShowCurrentPageInMatrixOfWholeDesktop
+AddToFunc   ShowCurrentPageInMatrixOfWholeDesktop
+
+#--- Avoid overhead when moving around pages VERY quickly - PART 1 of 2 (-(-(-(
++ I Test (EnvMatch form_pages0_pid 1) Break
+#--- Avoid overhead when moving around pages VERY quickly - PART 1 of 2 )-)-)-)
+
++ I Deschedule $[schedule.last.own]
+
++ I KillModule FvwmButtons Form-Pages0
+
++ I DestroyModuleConfig Form-Pages0: *
+
++ I *Form-Pages0: Colorset 10
+#10,12,14,15,18
+
++ I *Form-Pages0: Font "Shadow=0:xft:Sans:DemiBold:size=26:antialias=True"
+
+# ( fixed | dumb = fixed nor smart | smart )
+#+ I *FvwmButtons: BoxSize fixed
+
+# relief width ( negative = sunken | positiv = raised )
+#+ I *TaskBar0: Frame 10
+
++ I *Form-Pages0: Rows 1
+#+ I *Form-Pages0: Columns 2
+
+#--- Setup and Geometry ------------------------------------------------(-(-(-(
+#  Height of Form-Pages0 in pixels on viewport with $[vp.height] = $[fvwm_eh]
++ I SetEnv form-pages0_fixedheight 85
+
+#  Height of Form-Pages0 in pixels (viewport size independent)
++ I PipeRead "echo SetEnv form-pages0_height \
+   $(( ( $[form-pages0_fixedheight] * \
+   ( 100 * $[vp.height] + $[fvwm_f] * $[fvwm_eh] - $[fvwm_f] * $[vp.height] ) \
+   ) / ( 100 * $[fvwm_eh] ) ))"
+
+#  Width of Form-Pages0 in pixels (viewport size independent)
++ I PipeRead "echo SetEnv form-pages0_width \
+   $(( ( $[form-pages0_fixedheight] * $[fvwm_ew] * $[desk.pagesx] * \
+   ( 100 * $[vp.width] + $[fvwm_f] * $[fvwm_ew] - $[fvwm_f] * $[vp.width] ) \
+   ) / ( 100 * $[fvwm_ew] * $[fvwm_eh] ) ))"
+
+#  Geometry of taskbar
+#PipeRead 'echo *Form-Pages0: Geometry $[form-pages0_width]x$[form-pages0_height]'
+#+$((($[vp.width]-$[taskbar0_width])/2))+0'
+
+#  Place FormPages0 horizontally in the middle
++ I PipeRead 'echo Module FvwmButtons -g \
+$[form-pages0_width]x$[form-pages0_height]\
++$(( ( $[vp.width] - $[form-pages0_width] ) / 2 ))\
++$(( $[vp.height] / 4 )) Form-Pages0'
+
+#  Place FormPages0 smart (the current desktop is stil in the middle)
+#+ I PipeRead 'echo Module FvwmButtons -g \
+#$[form-pages0_width]x$[form-pages0_height]\
+#+$(( ( $[vp.width] / 2 ) \
+#   - ( 2 * $[page.nx] * $[form-pages0_width] + $[form-pages0_width] ) / \
+#   ( $[desk.pagesx] * 2 ) ))\
+#+$(( $[vp.height] / 10 )) Form-Pages0'
+
+# for linear ratio
+#   - ( 2 * $[form-pages0_fixedheight] * $[fvwm_ew] * $[page.nx] + \
+#   $[form-pages0_fixedheight] * $[fvwm_ew] ) / ( $[fvwm_eh] * 2 ) ))\
+#--- Setup and Geometry ------------------------------------------------)-)-)-)
+
+#--- Unset Variables ---------------------------------------------------(-(-(-(
++ I UnsetEnv form-pages0_width
++ I UnsetEnv form-pages0_height
++ I UnsetEnv form-pages0_ratio
+#--- Unset Variables ---------------------------------------------------)-)-)-)
+
+#--- Content -----------------------------------------------------------(-(-(-(
++ I PipeRead 'a=0; while test $a -lt $[desk.pagesx]; do \
+   if test $a -eq $[page.nx]; then \
+      echo \"*Form-Pages0: (1x1, Frame 4, Title $a, Colorset 18)\"; \
+   else \
+      echo \"*Form-Pages0: (1x1, Frame 0, Title $a)\"; \
+   fi; a=$(($a+1)); done'
+
+#+ I *Form-Pages0: (Title "$[page.nx] mensi test")
+#--- Content -----------------------------------------------------------)-)-)-)
+
++ I Schedule 1500 Function KillForm-Pages0
++ I SetEnv schedule.last.own $[schedule.last]
+
+#--- Avoid overhead when moving around pages VERY quickly - PART 2 of 2 (-(-(-(
++ I SetEnv form_pages0_pid 1
++ I Schedule 100 76543210 Function UnsetEnvFormPages0Pid
+#--- Avoid overhead when moving around pages VERY quickly - PART 2 of 2 )-)-)-)
+
+DestroyFunc KillForm-Pages0
+AddToFunc   KillForm-Pages0
++ I KillModule FvwmButtons Form-Pages0
+
+DestroyFunc UnsetEnvFormPages0Pid
+AddToFunc   UnsetEnvFormPages0Pid
++ I SetEnv form_pages0_pid 0

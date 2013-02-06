@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Generate GDM poweroff menu.
+# usage: sh_poweroffmenu-gdm menu1 menu2
+#  menu1 = name of menu, where to place power off functionality
+#  menu2 = name of menu, where to place locking, etc. possibilities
+
+type gdmflexiserver > /dev/null 2>&1 || exit
+
+ACTION="Exec exec gdmflexiserver --authenticate --command="
+SUSPEND="${ACTION}\"SET_SAFE_LOGOUT_ACTION SUSPEND\""
+REBOOT="${ACTION}\"SET_SAFE_LOGOUT_ACTION REBOOT\""
+HALT="${ACTION}\"SET_SAFE_LOGOUT_ACTION HALT\""
+
+GDM_QUERY="$(gdmflexiserver --authenticate --command=QUERY_LOGOUT_ACTION 2> /dev/null)"
+
+echo GDM_QUERY | grep SUSPEND > /dev/null 2>&1 &&
+  echo AddToMenu $1 \"\$[gt.Suspend computer]%system-shutdown%\" ${SUSPEND}
+echo GDM_QUERY | grep REBOOT > /dev/null 2>&1 &&
+  echo AddToMenu $1 \"\$[gt.Reboot computer]%system-reboot%\" ${REBOOT}
+echo GDM_QUERY | grep HALT > /dev/null 2>&1 &&
+  echo AddToMenu $1 \"\$[gt.Turn off computer]%system-shutdown%\" ${HALT}
+
+echo AddToMenu $2 \"\$[gt.New login]%gdm%\" Exec exec gdmflexiserver;
+type Xnest > /dev/null 2>&1 &&
+  echo AddToMenu $2 \"\$[gt.New Xnested GDM login]%gdm-xnest%\" Exec exec gdmflexiserver --xnest;
+
+echo AddToMenu $2 \"\" Nop;

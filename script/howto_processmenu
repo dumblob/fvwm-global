@@ -1,0 +1,53 @@
+DestroyMenu Processes
+AddToMenu Processes Processes title
++ DynamicPopupAction Function GetProcessList
+
+DestroyFunc GetProcessList
+AddToFunc GetProcessList
++ I DestroyMenu recreate Processes
++ I AddToMenu Processes Processes title
++ I PipeRead 'echo "`$HOME/.fvwm/scripts/fvwm-process-menu`"'
+
+DestroyFunc GetProcInfo
+AddToFunc GetProcInfo
++ I DestroyMenu recreate $0
++ I AddToMenu $0
++ I Piperead 'echo "`$HOME/.fvwm/scripts/get-proc-info $0`"'
+You need the following Shell Scripts (don''t forget to change the paths and
+names in the config file entry if you place them differently):
+
+.fvwm/scripts/fvwm-process-menu:
+
+#!/bin/bash (-)
+ps -A | awk '{ print "AddToMenu Processes \""$1"   "$4"\" Popup "$1""}'
+ps -A | awk '{ print "AddToMenu "$1" DynamicPopupAction Function GetProcInfo
+"$1""}'
+.fvwm/scripts/get-proc-info:
+
+#!/bin/bash (-)
+process=`ps -A | grep -m1 $1 | awk '{print $4}'`
+
+if [ -e /proc/$1/status ]
+then
+        MEM=`cat /proc/$1/status | grep VmSize | awk '{print $2}'`
+        if [ -n "$MEM" ] && [ $MEM -gt "10240" ]
+        then let MB=$MEM/1024
+                 echo "AddToMenu $1 \"memory: $MB MB\" Nop"
+        elif [ -n "$MEM" ]
+        then echo "AddToMenu $1 \"memory: $MEM kB\" Nop"
+        fi
+        echo "AddToMenu $1 \"State: `cat /proc/$1/status | grep State | awk
+'{print $3}'`\" Nop"
+        PARENT=`cat /proc/$1/status | grep PPid | awk '{print $2}'`
+        echo "AddToMenu $1 \"Parent: $PARENT `ps -A | grep -m1 $PARENT | awk
+'{print $4}'`\" Nop"
+        echo "AddToMenu $1 \"nice: `cat /proc/$1/stat | awk '{print $19}'`\"
+Nop"
+        echo "AddToMenu $1 \"\" Nop"
+        echo "AddToMenu $1 \"kill -9 process\" Exec exec kill -9 $1"
+        echo "AddToMenu $1 \"send interrupt\" Exec exec kill -2 $1"
+        echo "AddToMenu $1 \"add 1 nice\" Exec exec renice +1 $1"
+        echo "AddToMenu $1 \"set nice 5\" Exec exec renice 5 $1"
+        echo "AddToMenu $1 \"set nice 10\" Exec exec renice 10 $1"
+        echo "AddToMenu $1 \"set nice 20\" Exec exec renice 20 $1"
+fi

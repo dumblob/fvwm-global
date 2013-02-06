@@ -1,0 +1,247 @@
+
+#FIXME
+# pidof gdm... atd., je to spravne? (musim zjistit, jak se jmenuji ty binarky)
+#   DOPSAT podporu KDM a pripadne Enlightenment prihlasovaciho manageru
+#   a mozna by bylo i zajimave mit podporu cisteho HAL,
+#   ale nevim jaky signal to je atd., proste nevim kudy do toho
+
+#FIXME
+# dodelat windowmenu v otherwinops submenu !!!
+
+#FIXME
+# co je kvalitnejsi a co rychlejsi:
+#  a) velka bitmapa -> to greyscale -> resize (na pozadovanou velikost)
+#  b) velka bitmapa -> resize (na pozadovanou velikost) -> to greyscale
+
+#FIXME
+# v poweroffmenu: jestlize podpora suspend to ram/disk, tak ji zobrazit
+# v takeoutmenu: jestlize existuje nejaky lock program, tak ho zobrazit
+# v otherwinoperationsmenu: if existuje nejaky screenshot program, tak zobrazit
+
+
+
+#--------
+# Menus Reminder
+#----------------
+
+#  Usefull functions:
+# ChangeMenuStyle [menustyle] [menu]
+# CopyMenuStyle [orig-menustyle] [dest-menustyle]
+# DestroyMenuStyle [menustyle]
+
+#DestroyMenu NameOfMenuForFvwmInternalUsage
+#AddToMenu   NameOfMenuForFvwmInternalUsage \
+   "$[gt.User title od this menu]" Title
+#  separator
+#+ "" Nop
+#+ "[item name]%[icon]%" [action]
+#+ "%[icon]%[item name]" [action]
+#  You can place '&' character anywhere in [item name]
+#    to make letter behind a keyboard HotKey
+#+ "$[gt.&Fvwm man pages]%help%"   Popup InternalNameOfOtherMenu
+#  To use gettext (language translation), use $[gt.name of item] variable
+#+ "$[gt.Console]%terminal.png%"      Exec exec $[fvwm_term]
+#+ "$[gt.FVWM Console]%terminal.png%" Module FvwmConsole
+#+ DynamicPopUpAction and DynamicPopDownAction (Silent)
+#    (executed everytime, you open(Up)/close(Down) this root menu)
+#+ "$[gt.Programs]%programs.png%"     Popup FvwmProgramsMenu
+
+#  Usefull icon names:
+# folder folder-open
+# add gtk-add
+# gtk-remove
+# gtk-cancel
+# help gnome-help gnome-unknown
+# system-lock-screen gnome-lockscreen lock
+# forward
+# stop gtk-stop
+# system-log-out gnome-logout
+# system-shutdown gnome-shutdown
+
+
+
+#--------
+# FvwmRootMenu
+#----------------
+
+DestroyMenu	FvwmRootMenu
+AddToMenu   FvwmRootMenu
+#"$[gt.Root Menu]" Title
++ "$[gt.Console]%terminal%"    Exec exec $[fvwm_term]
+#+ "Termit ISO-8859-2%termit%"  Exec LANG=cs_CZ exec termit
++ ""                           Nop
+# Generate "Program menu" only at (re)start of fvwm (to decrease the time
+#   than menu appears - in opposite to on-the-fly generated menus).
+PipeRead '$./../script/sh_progmenugen -n FvwmRootMenu'
+AddToMenu FvwmRootMenu
++ "" Nop
+#+ "$[gt.Fvwm man pages]%help%" Popup FvwmManPagesMenu
++ "$[gt.Take out]%quit%"       Popup TakeOutMenu
+
+DestroyMenu TakeOutMenu
+AddToMenu   TakeOutMenu
+#"$[gt.Take out]" Title
++ "F? Virtual Window Manager $[gt.Restart]%restart%"       Restart
++ "F? Virtual Window Manager $[gt.Quit]%application-exit%" Quit
+
+# ukoncit = power off, turn off, turn down, lock (up), finnish,
+#   complete, take out
+DestroyMenu PowerOffMenu
+#AddToMenu   PowerOffMenu "$[gt.Power Off]" Title
+PipeRead \
+ 'if pidof gdm > /dev/null 2>&1; then \
+    $./../script/sh_poweroffmenu-gdm PowerOffMenu TakeOutMenu; \
+  else \
+    if pidof kdm > /dev/null 2>&1; then \
+      $./../script/sh_poweroffmenu-kdm PowerOffMenu TakeOutMenu; \
+    else \
+      if pidof ck-launch-session > /dev/null 2>&1; then \
+        $./../script/sh_poweroffmenu-policykit PowerOffMenu TakeOutMenu; \
+      else \
+        if type sudo > /dev/null 2>&1; then \
+          $./../script/sh_poweroffmenu-sudo PowerOffMenu TrashMenu; \
+        else \
+          echo AddToMenu PowerOffMenu \\\"$[gt.There is no possibility \
+to turn off the computer!]%help%\\\" Nop; \
+        fi; \
+        $./../script/sh_poweroffmenu-sudo TrashMenu TakeOutMenu; \
+        echo DestroyMenu TrashMenu; \
+      fi; \
+    fi; \
+  fi'
+
+AddToMenu TakeOutMenu "$[gt.Turn off computer]%help%" \
+   Menu PowerOffMenu Root o50 o35
+
+
+
+#--------
+# FVWM Help Menu
+#----------------
+
+DestroyMenu FvwmManPagesMenu
+AddToMenu   FvwmManPagesMenu
+#"FVWM $[gt.Man Pages]" Title
++ "%help%fvwm"                FvwmViewManPage fvwm
++ "%help%FvwmAnimate"         FvwmViewManPage FvwmAnimate
++ "%help%FvwmAuto"            FvwmViewManPage FvwmAuto
++ "%help%FvwmBacker"          FvwmViewManPage FvwmBacker
++ "%help%FvwmBanner"          FvwmViewManPage FvwmBanner
++ "%help%FvwmButtons"         FvwmViewManPage FvwmButtons
++ "%help%FvwmCommand"         FvwmViewManPage FvwmCommand
++ "%help%FvwmConsole"         FvwmViewManPage FvwmConsole
++ "%help%FvwmConsoleC.pl"     FvwmViewManPage FvwmConsoleC.pl
++ "%help%FvwmCpp"             FvwmViewManPage FvwmCpp
++ "%help%FvwmDebug"           FvwmViewManPage FvwmDebug
++ "%help%FvwmDragWell"        FvwmViewManPage FvwmDragWell
++ "%help%FvwmEvent"           FvwmViewManPage FvwmEvent
++ "%help%FvwmForm"            FvwmViewManPage FvwmForm
++ "%help%FvwmGtk"             FvwmViewManPage FvwmGtk
++ "%help%FvwmGtkDebug"        FvwmViewManPage FvwmGtkDebug
++ "%help%FvwmIconBox"         FvwmViewManPage FvwmIconBox
++ "%help%FvwmIconMan"         FvwmViewManPage FvwmIconMan
++ "%help%FvwmIdent"           FvwmViewManPage FvwmIdent
++ "%help%FvwmM4"              FvwmViewManPage FvwmM4
++ "%help%FvwmPager"           FvwmViewManPage FvwmPager
++ "%help%FvwmPerl"            FvwmViewManPage FvwmPerl
++ "%help%FvwmProxy"           FvwmViewManPage FvwmProxy
++ "%help%FvwmRearrange"       FvwmViewManPage FvwmRearrange
++ "%help%FvwmSave"            FvwmViewManPage FvwmSave
++ "%help%FvwmSaveDesk"        FvwmViewManPage FvwmSaveDesk
++ "%help%FvwmScript"          FvwmViewManPage FvwmScript
++ "%help%FvwmScroll"          FvwmViewManPage FvwmScroll
++ "%help%FvwmTaskBar"         FvwmViewManPage FvwmTaskBar
++ "%help%FvwmTabs"            FvwmViewManPage FvwmTabs
++ "%help%FvwmTheme"           FvwmViewManPage FvwmTheme
++ "%help%FvwmWharf"           FvwmViewManPage FvwmWharf
++ "%help%FvwmWindowMenu"      FvwmViewManPage FvwmWindowMenu
++ "%help%FvwmWinList"         FvwmViewManPage FvwmWinList
++ "" Nop
++ "%help%fvwm-config"         FvwmViewManPage fvwm-config
++ "%help%fvwm-perllib"        FvwmViewManPage fvwm-perllib
++ "%help%fvwm-root"           FvwmViewManPage fvwm-root
++ "%help%fvwm-bug"            FvwmViewManPage fvwm-bug
++ "%help%fvwm-convert-2.2"    FvwmViewManPage fvwm-convert-2.2
++ "%help%fvwm-convert-2.4"    FvwmViewManPage fvwm-convert-2.4
++ "" Nop
++ "%help%fvwm-menu-desktop"   FvwmViewManPage fvwm-menu-desktop
++ "%help%fvwm-menu-directory" FvwmViewManPage fvwm-menu-directory
++ "%help%fvwm-menu-headlines" FvwmViewManPage fvwm-menu-headlines
++ "%help%fvwm-menu-xlock"     FvwmViewManPage fvwm-menu-xlock
+
+
+
+#--------
+# Window Operations Menu
+#----------------
+
+DestroyMenu WindowOpsMenu
+AddToMenu   WindowOpsMenu
+#"$[gt.Window Operations]" Title
++ DynamicPopUpAction Function MenuWindowOpsFunc WindowOpsMenu
+#$[gt.Enlarge] = zvetsit,roztahnout
+#$[gt.Other Window Operations] = dalsi cinnosti
+
+DestroyMenu PagesMenu
+AddToMenu   PagesMenu
+#"$[gt.Page]" Title
++ DynamicPopUpAction Function MenuPagesFunc PagesMenu
+
+DestroyMenu CloseWinMenu
+AddToMenu   CloseWinMenu
+#"$[gt.Close]" Title
++ "$[gt.Close in normal way]%window-close.xpm%" Close
+# zavrit beznym zpusobem
++ "$[gt.Delete]%window-delete.xpm%"             Delete
++ "$[gt.Destroy]%window-destroy.xpm%"           Destroy
+
+DestroyMenu MaximizeMenu
+AddToMenu   MaximizeMenu
+#"$[gt.(Un)Maximize]" Title
++ "$[gt.Full Screen]%window-maximize.xpm%"  Maximize toogle
++ "$[gt.Vertically]%window-maximize.xpm%"   Maximize 0 100
++ "$[gt.Horizontally]%window-maximize.xpm%" Maximize 100 0
+
+DestroyMenu EnlargeMenu
+AddToMenu   EnlargeMenu
+#"$[gt.Enlarge]" Title
++ "> $[gt.Right]%ty_ikony_co_ma_mys_nad_border%" \
+   Maximize growonwindowlayer screen g growright 0
++ "< $[gt.Left]%ty_ikony_co_ma_mys_nad_border%" \
+   Maximize growonwindowlayer screen g growleft 0
++ "^ $[gt.Up]%ty_ikony_co_ma_mys_nad_border%" \
+   Maximize growonwindowlayer screen g 0 growup
++ "v $[gt.Down]%ty_ikony_co_ma_mys_nad_border%" \
+   Maximize growonwindowlayer screen g 0 growdown
+# growonlayers 3 7
+
+DestroyMenu LayerMenu
+AddToMenu   LayerMenu
+#"$[gt.Layer]" Title
++ "$[gt.Top] ($[fvwm_top_layer])%window-raise.xpm%" \
+   Layer 0 $[fvwm_top_layer]
++ "$[gt.Transient] ($[fvwm_transient_layer])%window.xpm%" \
+   Layer 0 $[fvwm_transient_layer]
++ "$[gt.Fullscreen] ($[fvwm_fullscreen_layer])%window.xpm%" \
+   Layer 0 $[fvwm_fullscreen_layer]
++ "$[gt.Bar] ($[fvwm_bar_layer])%window.xpm%" \
+   Layer 0 $[fvwm_bar_layer]
++ "$[gt.Put] ($[fvwm_put_layer])%window.xpm%" \
+   Layer 0 $[fvwm_put_layer]
++ "$[gt.Bottom] ($[fvwm_bottom_layer])%window-lower.xpm%" \
+   Layer 0 $[fvwm_bottom_layer]
++ "" Nop
++ "$[gt.Layer] +1%window-raise.xpm%" Layer +1
++ "$[gt.Default Layer]%window.xpm%"  Layer default
++ "$[gt.Layer] -1%window-lower.xpm%" Layer -1
+
+DestroyMenu OtherWinOperationsMenu
+AddToMenu   OtherWinOperationsMenu
+#"$[gt.Other Window Operations]" Title
+#+ vyfotit okno
+#+ zviditelnit okno (jenom pokud neni ve viewportu vubec videt - bud prekryte,
+#    nebo mimo nynejsi page) -> fce: if w.width > w.viewport than resize na
+#    w.viewport; to same pro height; move na tuto page doprostred; raise; focus
++ "$[gt.Identify]%window-identify.xpm%" Module FvwmIdent
+
+# vim:ft=fvwm
